@@ -1,0 +1,17 @@
+{
+  "name": "tareas-equipo",
+  "version": "1.0.0",
+  "description": "API REST para el registro de tareas de un equipo de desarrollo. Proyecto de Integración Continua, Politécnico Grancolombiano.",
+  "main": "src/server.js",
+  "type": "commonjs",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test \"tests/*.test.js\""
+  },
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.21.2",
+    "pg": "^8.13.1"
+  }
+}
