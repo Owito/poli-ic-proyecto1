@@ -165,7 +165,8 @@ def figura(png, titulo_fig, explicacion, ancho=6.5):
     pn = doc.add_paragraph(); pn.paragraph_format.line_spacing_rule = WD_LINE_SPACING.SINGLE
     pn.paragraph_format.space_after = Pt(10)
     rn = pn.add_run("Nota. "); rn.italic = True
-    pn.add_run("Captura de la salida real del comando, generada durante la elaboración de este trabajo.")
+    pn.add_run("Elaboración propia." if png.startswith("diagrama") else
+               "Captura de la salida real del comando, generada durante la elaboración de este trabajo.")
     parrafo(f"**Qué muestra la Figura {n}.** {explicacion}")
     return n
 
