@@ -132,7 +132,7 @@ hp.alignment = WD_ALIGN_PARAGRAPH.RIGHT
 campo(hp, "PAGE")
 
 contador = {"fig": 0, "lis": 0, "tab": 0}
-ORDEN = ["01-versiones", "02-estructura", "18-git-log", "diagrama-arquitectura", "16-usuario-no-root", "03-compose-up",
+ORDEN = ["01-versiones", "02-estructura", "18-git-log", "19-github", "diagrama-arquitectura", "16-usuario-no-root", "03-compose-up",
          "04-compose-ps", "05-salud-db", "06-red", "11-dns-desde-app", "08-curl-salud", "09-curl-tareas", "10-psql",
          "12-crud", "13-psql-verifica", "14-validacion", "17-persistencia", "15-pruebas"]
 
@@ -340,9 +340,12 @@ parrafo(f"El proyecto se desarrolló en un repositorio Git con commits pequeños
 figura("18-git-log.png", "Historial de commits del repositorio",
        "Cada línea de cabecera es un commit con su identificador corto, autor, fecha y mensaje, seguida de los archivos que modificó. Confirma que el trabajo "
        "quedó registrado por etapas: primero la API, luego los contenedores y después la documentación.")
-parrafo("Los repositorios de GitHub se describen en su documentación oficial (GitHub, s. f.-b). [[PENDIENTE DEL GRUPO: crear el repositorio en GitHub, enlazarlo con git remote add origin y hacer push. Después insertar aquí una captura de la página "
-        "principal del repositorio en GitHub (con la lista de archivos y el historial de commits) y escribir la URL: https://github.com/USUARIO/REPOSITORIO. "
-        "Si hay varios integrantes con commits, la captura del historial muestra el aporte de cada uno.]]")
+parrafo("Los repositorios de GitHub se describen en su documentación oficial (GitHub, s. f.-b). El proyecto se publicó en un repositorio privado de "
+        f"GitHub, https://github.com/Owito/poli-ic-proyecto1, enlazado como remoto origin del repositorio local. La Figura {F("19-github")} muestra la "
+        "consulta del repositorio publicado y su historial en GitHub. [[CONFIRMAR: si otros integrantes agregan commits, el historial mostrará el aporte de cada uno.]]", keep=True)
+figura("19-github.png", "Repositorio publicado en GitHub",
+       "La primera consulta confirma el nombre, la visibilidad privada, la rama principal main y la dirección del repositorio. La segunda muestra que la "
+       "rama main de GitHub apunta al mismo commit que el repositorio local, y la tercera lista el historial tal como quedó publicado.")
 parrafo("Para que el tutor pueda revisar el proyecto, el repositorio debe darle acceso como colaborador, es decir, como usuario de desarrollo, tal como lo "
         "pidió en el encuentro del 26 de octubre de 2026 (Reyes Corredor, 2026). GitHub documenta el procedimiento de invitación (GitHub, s. f.-a). "
         "[[PENDIENTE DEL GRUPO: invitar al tutor Edward Reyes Corredor con el usuario de GitHub que él indique y comprobar que puede entrar.]]")
