@@ -1,0 +1,31 @@
+$ docker compose up -d --build 2>&1 | tail -30
+#14 exporting to image
+#14 exporting layers
+#14 exporting layers 0.4s done
+#14 exporting manifest sha256:2c8d2b81358806da01a55c0ff9139b1bcfafa54c059f4bb423679c6fcfe22f8b 0.0s done
+#14 exporting config sha256:2259d72948e64f150aa09e51143334c67ca4876588c0a01981d4f88c36a09965 0.0s done
+#14 exporting attestation manifest sha256:b2c19afca0ee3a04304ae13dbfb2a8630145fd02af7aea7a0164921f94a0fa0c
+#14 exporting attestation manifest sha256:b2c19afca0ee3a04304ae13dbfb2a8630145fd02af7aea7a0164921f94a0fa0c 0.0s done
+#14 exporting manifest list sha256:163924c0ec98f14eee734d5572050f6f45ac73c4ede4c8b2980d20af2671f10e 0.0s done
+#14 naming to docker.io/library/tareas-equipo-app:latest done
+#14 unpacking to docker.io/library/tareas-equipo-app:latest
+#14 unpacking to docker.io/library/tareas-equipo-app:latest 0.2s done
+#14 DONE 0.7s
+
+#15 resolving provenance for metadata file
+#15 DONE 0.0s
+ Image tareas-equipo-app Built 
+ Network tareas-equipo_red-tareas Creating 
+ Network tareas-equipo_red-tareas Created 
+ Volume tareas-equipo_tareas-datos Creating 
+ Volume tareas-equipo_tareas-datos Created 
+ Container tareas-db Creating 
+ Container tareas-db Created 
+ Container tareas-app Creating 
+ Container tareas-app Created 
+ Container tareas-db Starting 
+ Container tareas-db Started 
+ Container tareas-db Waiting 
+ Container tareas-db Healthy 
+ Container tareas-app Starting 
+ Container tareas-app Started 

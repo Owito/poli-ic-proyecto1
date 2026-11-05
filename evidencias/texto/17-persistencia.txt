@@ -1,0 +1,33 @@
+$ docker compose down; docker compose up -d; sleep 12; docker compose ps; curl -s http://localhost:8095/tareas/6 | bonito
+ Container tareas-app Stopping 
+ Container tareas-app Stopped 
+ Container tareas-app Removing 
+ Container tareas-app Removed 
+ Container tareas-db Stopping 
+ Container tareas-db Stopped 
+ Container tareas-db Removing 
+ Container tareas-db Removed 
+ Network tareas-equipo_red-tareas Removing 
+ Network tareas-equipo_red-tareas Removed 
+ Network tareas-equipo_red-tareas Creating 
+ Network tareas-equipo_red-tareas Created 
+ Container tareas-db Creating 
+ Container tareas-db Created 
+ Container tareas-app Creating 
+ Container tareas-app Created 
+ Container tareas-db Starting 
+ Container tareas-db Started 
+ Container tareas-db Waiting 
+ Container tareas-db Healthy 
+ Container tareas-app Starting 
+ Container tareas-app Started 
+NAME         IMAGE                COMMAND                  SERVICE   CREATED          STATUS                    PORTS
+tareas-app   tareas-equipo-app    "docker-entrypoint.s…"   app       19 seconds ago   Up 12 seconds             0.0.0.0:8095->3000/tcp, [::]:8095->3000/tcp
+tareas-db    postgres:16-alpine   "docker-entrypoint.s…"   db        19 seconds ago   Up 18 seconds (healthy)   5432/tcp
+{
+  "id": 6,
+  "titulo": "Entregar la Entrega 1 en Canvas",
+  "responsable": "Grupo 14",
+  "estado": "en_progreso",
+  "creada_en": "2026-11-05T21:54:51.187Z"
+}

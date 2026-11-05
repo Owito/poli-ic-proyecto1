@@ -1,0 +1,4 @@
+$ docker compose ps
+NAME         IMAGE                COMMAND                  SERVICE   CREATED         STATUS                   PORTS
+tareas-app   tareas-equipo-app    "docker-entrypoint.s…"   app       7 seconds ago   Up Less than a second    0.0.0.0:8095->3000/tcp, [::]:8095->3000/tcp
+tareas-db    postgres:16-alpine   "docker-entrypoint.s…"   db        7 seconds ago   Up 6 seconds (healthy)   5432/tcp

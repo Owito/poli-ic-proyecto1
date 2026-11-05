@@ -1,0 +1,6 @@
+$ docker compose exec -T db sh -c 'psql -U $POSTGRES_USER -d $POSTGRES_DB -c "SELECT id, titulo, estado FROM tareas WHERE id = 6;"'
+ id |             titulo              |   estado    
+----+---------------------------------+-------------
+  6 | Entregar la Entrega 1 en Canvas | en_progreso
+(1 row)
+

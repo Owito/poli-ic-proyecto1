@@ -1,0 +1,38 @@
+$ curl -s http://localhost:8095/tareas | bonito
+[
+  {
+    "id": 1,
+    "titulo": "Crear el repositorio del proyecto en GitHub",
+    "responsable": "Integrante 1",
+    "estado": "hecha",
+    "creada_en": "2026-11-05T21:54:45.154Z"
+  },
+  {
+    "id": 2,
+    "titulo": "Escribir el Dockerfile de la API",
+    "responsable": "Integrante 2",
+    "estado": "hecha",
+    "creada_en": "2026-11-05T21:54:45.154Z"
+  },
+  {
+    "id": 3,
+    "titulo": "Definir docker-compose con la API y la base de datos",
+    "responsable": "Integrante 3",
+    "estado": "en_progreso",
+    "creada_en": "2026-11-05T21:54:45.154Z"
+  },
+  {
+    "id": 4,
+    "titulo": "Redactar las pruebas automatizadas",
+    "responsable": "Integrante 4",
+    "estado": "pendiente",
+    "creada_en": "2026-11-05T21:54:45.154Z"
+  },
+  {
+    "id": 5,
+    "titulo": "Preparar el documento de la Entrega 1",
+    "responsable": "Integrante 5",
+    "estado": "pendiente",
+    "creada_en": "2026-11-05T21:54:45.154Z"
+  }
+]

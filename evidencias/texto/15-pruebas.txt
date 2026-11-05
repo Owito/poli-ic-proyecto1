@@ -1,0 +1,10 @@
+$ docker compose exec -T app npm test 2>&1 | grep -E '^(ok|not ok)|^# (tests|pass|fail|skipped)'
+ok 1 - POST /tareas sin titulo responde 400
+ok 2 - GET /tareas con estado inválido responde 400
+ok 3 - GET /tareas/:id inexistente responde 404
+ok 4 - GET /salud responde 503 si la BD falla
+ok 5 - integración: salud, crear, leer, actualizar y borrar una tarea
+# tests 5
+# pass 5
+# fail 0
+# skipped 0

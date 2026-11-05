@@ -1,0 +1,10 @@
+$ docker compose exec -T db sh -c 'psql -U $POSTGRES_USER -d $POSTGRES_DB -c "SELECT id, titulo, responsable, estado FROM tareas ORDER BY id;"'
+ id |                        titulo                        | responsable  |   estado    
+----+------------------------------------------------------+--------------+-------------
+  1 | Crear el repositorio del proyecto en GitHub          | Integrante 1 | hecha
+  2 | Escribir el Dockerfile de la API                     | Integrante 2 | hecha
+  3 | Definir docker-compose con la API y la base de datos | Integrante 3 | en_progreso
+  4 | Redactar las pruebas automatizadas                   | Integrante 4 | pendiente
+  5 | Preparar el documento de la Entrega 1                | Integrante 5 | pendiente
+(5 rows)
+

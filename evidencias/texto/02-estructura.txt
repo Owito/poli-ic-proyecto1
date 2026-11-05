@@ -1,0 +1,14 @@
+$ git ls-files | grep -v -e '^evidencias/' -e '^docs/' -e '^tools/' -e package-lock
+.dockerignore
+.env.example
+.gitignore
+Dockerfile
+README.md
+db/init.sql
+docker-compose.yml
+package.json
+src/app.js
+src/db.js
+src/server.js
+tests/app.test.js
+tests/integracion.test.js

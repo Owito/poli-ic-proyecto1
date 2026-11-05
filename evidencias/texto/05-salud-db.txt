@@ -1,0 +1,3 @@
+$ docker inspect tareas-db --format 'contenedor={{.Name}} estado={{.State.Status}} salud={{.State.Health.Status}}'; docker inspect tareas-app --format 'contenedor={{.Name}} estado={{.State.Status}}'
+contenedor=/tareas-db estado=running salud=healthy
+contenedor=/tareas-app estado=running

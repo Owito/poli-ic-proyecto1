@@ -1,0 +1,24 @@
+$ git log --stat --format='%h %an %ad %s' --date=short | head -40
+fd9a94f Carloswar 2026-11-05 docs: README con instrucciones para levantar el proyecto
+
+ README.md | 64 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 64 insertions(+)
+dfb39ca Carloswar 2026-11-05 feat: contenedores de la API y la base de datos con Docker Compose
+
+ .env.example       |  5 +++++
+ Dockerfile         | 17 +++++++++++++++++
+ docker-compose.yml | 47 +++++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 69 insertions(+)
+b11b9da Carloswar 2026-11-05 feat: API REST de tareas con Express y PostgreSQL
+
+ .dockerignore             |   8 +
+ .gitignore                |   5 +
+ db/init.sql               |  17 +
+ package-lock.json         | 991 ++++++++++++++++++++++++++++++++++++++++++++++
+ package.json              |  17 +
+ src/app.js                |  83 ++++
+ src/db.js                 |  17 +
+ src/server.js             |  11 +
+ tests/app.test.js         |  40 ++
+ tests/integracion.test.js |  38 ++
+ 10 files changed, 1227 insertions(+)

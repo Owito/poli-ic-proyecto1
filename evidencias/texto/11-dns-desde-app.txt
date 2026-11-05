@@ -1,0 +1,2 @@
+$ docker compose exec -T app node -e "require('dns').lookup('db',(e,ip)=>console.log('desde el contenedor tareas-app, el nombre db resuelve a', ip))"
+desde el contenedor tareas-app, el nombre db resuelve a 172.25.0.2

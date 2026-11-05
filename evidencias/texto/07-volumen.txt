@@ -1,0 +1,2 @@
+$ docker volume inspect tareas-equipo_tareas-datos --format 'volumen={{.Name}} driver={{.Driver}} montaje={{.Mountpoint}}'
+volumen=tareas-equipo_tareas-datos driver=local montaje=/var/lib/docker/volumes/tareas-equipo_tareas-datos/_data

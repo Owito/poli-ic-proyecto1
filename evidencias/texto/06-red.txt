@@ -1,0 +1,4 @@
+$ docker network inspect tareas-equipo_red-tareas --format '{{.Name}} driver={{.Driver}}{{range $id,$c := .Containers}}{{println}}  {{$c.Name}}  ip={{$c.IPv4Address}}{{end}}'
+tareas-equipo_red-tareas driver=bridge
+  tareas-app  ip=172.25.0.3/16
+  tareas-db  ip=172.25.0.2/16

@@ -1,0 +1,16 @@
+$ curl -s -X POST http://localhost:8095/tareas -H 'Content-Type: application/json' -d '{"titulo":"Entregar la Entrega 1 en Canvas","responsable":"Grupo 14"}' | bonito; echo ---; curl -s -X PUT http://localhost:8095/tareas/6 -H 'Content-Type: application/json' -d '{"estado":"en_progreso"}' | bonito
+{
+  "id": 6,
+  "titulo": "Entregar la Entrega 1 en Canvas",
+  "responsable": "Grupo 14",
+  "estado": "pendiente",
+  "creada_en": "2026-11-05T21:54:51.187Z"
+}
+---
+{
+  "id": 6,
+  "titulo": "Entregar la Entrega 1 en Canvas",
+  "responsable": "Grupo 14",
+  "estado": "en_progreso",
+  "creada_en": "2026-11-05T21:54:51.187Z"
+}

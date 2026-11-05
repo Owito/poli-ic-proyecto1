@@ -1,0 +1,12 @@
+Verificado el 2026-11-05 con: curl -s -L -A 'Mozilla/5.0' -o /dev/null -w '%{http_code}' URL
+200 https://docs.docker.com/reference/dockerfile/
+200 https://docs.docker.com/reference/compose-file/
+200 https://docs.docker.com/compose/
+200 https://docs.docker.com/engine/network/
+200 https://docs.docker.com/engine/storage/volumes/
+200 https://www.postgresql.org/docs/16/
+200 https://nodejs.org/docs/latest-v22.x/api/test.html
+200 https://docs.github.com/en/repositories
+200 https://docs.github.com/en/account-and-profile/setting-up-and-managing-your-personal-account-on-github/managing-access-to-your-personal-repositories/inviting-collaborators-to-a-personal-repository
+200 https://hub.docker.com/_/postgres
+200 https://expressjs.com/

@@ -1,0 +1,7 @@
+$ curl -s http://localhost:8095/salud | bonito
+{
+  "estado": "ok",
+  "base_de_datos": "tareas",
+  "version": "PostgreSQL 16.14 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+  "hora_bd": "2026-11-05T21:54:50.101Z"
+}

@@ -1,0 +1,3 @@
+$ curl -s -o /dev/null -w 'POST sin titulo -> HTTP %{http_code}\n' -X POST http://localhost:8095/tareas -H 'Content-Type: application/json' -d '{}'; curl -s -o /dev/null -w 'GET /tareas/9999 -> HTTP %{http_code}\n' http://localhost:8095/tareas/9999
+POST sin titulo -> HTTP 400
+GET /tareas/9999 -> HTTP 404
