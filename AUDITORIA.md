@@ -16,7 +16,8 @@ Actualizada el 6-nov-2026 con el E3. En Canvas (actividad 625707) no hay rúbric
 | Evidencia con pantallazos y explicación debajo | E1 00:15:06, 00:15:27; E2 00:12:14; E3 00:05:46 | Cada figura con número, título, nota y explicación | Cumplido |
 | Documento PDF con normas APA: portada, introducción, conclusiones, referencias | E1 00:09:08; E2 00:13:30; E3 00:05:46, 00:06:07, 00:06:47 | `docs/Entrega1_IC_Proyecto1.pdf` | Cumplido al subir el PDF |
 | Sin video en esta entrega (va en la final) | E3 00:06:07, 00:07:52 | No aplica | Cumplido |
-| Acceso del tutor: no da su usuario; acepta repositorio público, usuario creado o enlace; recomienda público | E3 00:08:55, 00:09:05, 01:02:22 | Documento con interruptor `REPO_PUBLICO` en `build_documento.py` | Pendiente: decisión del grupo |
+| Acceso del tutor: no da su usuario; acepta repositorio público, usuario creado o enlace; recomienda público | E3 00:08:55, 00:09:05, 01:02:22 | Repositorio público desde el 6-nov (`gh repo view` -> PUBLIC; la página responde HTTP 200 sin sesión); figura de GitHub recapturada | Cumplido |
+| Lo que está en GitHub basta para reconstruir el ambiente | E3 00:43:35, 01:01:12 | Figura de clonación: `git clone` del repo público, proyecto `tareas-clon`, 2 contenedores sanos, `/salud` 200 y 5/5 pruebas (6-nov) | Cumplido y verificado |
 | Integrantes como colaboradores (Settings, Collaborators) | E3 00:07:52, 01:02:22 | Interruptor `COLABORADORES_INVITADOS` | Pendiente: usuarios de GitHub del grupo |
 | En la portada solo quienes trabajaron; grupo de 5, no individual | E1 00:14:40; E3 00:02:58 | Portada con los 5 y nota resaltada | Pendiente: grupo |
 | Herramientas libres; instalar solo lo necesario | E1 00:30:08; E2 00:31:14, 00:42:42 | Git, Docker, Node, Express, PostgreSQL (solo en contenedor) | Cumplido |
@@ -32,14 +33,10 @@ URLs de referencias: `docs/verificacion_urls.txt`.
 
 ## 3. Pendientes del grupo
 
-1. Decidir la visibilidad del repositorio (el tutor recomienda pública). Si se hace pública:
-   `gh repo edit Owito/poli-ic-proyecto1 --visibility public --accept-visibility-change-consequences`, recapturar
-   `evidencias/texto/19-github.txt` agregando `curl -s -o /dev/null -w '%{http_code}' https://github.com/Owito/poli-ic-proyecto1`
-   sin sesión, renderizar con `python tools/render_captura.py evidencias/texto/19-github.txt`, poner `REPO_PUBLICO = True`
-   y regenerar.
+1. Hecho el 6-nov: repositorio público, figura recapturada y `REPO_PUBLICO = True`.
 2. Usuarios de GitHub de los integrantes, invitarlos como colaboradores y que acepten; luego `COLABORADORES_INVITADOS = True`.
 3. Portada: quiénes trabajaron y sus códigos.
 4. Opcional: un párrafo del grupo con la experiencia y la distribución del trabajo (va al final de las conclusiones).
 5. Regenerar: `python build_documento.py` y `powershell -ExecutionPolicy Bypass -File tools\exportar_pdf.ps1`.
-6. Quién sube a Canvas (no lo dijo el tutor) y subir el PDF antes del 10-nov 11:55 p. m. En Canvas la actividad está atada
-   a una categoría de grupos distinta a la del "Trabajo colaborativo 14": confirmar con el tutor que la nota llegue a todos.
+6. Carlos sube el PDF a Canvas antes del 10-nov 11:55 p. m., con los nombres del grupo en la portada; el tutor carga la nota
+   a cada integrante al calificar (decisión de Carlos, 6-nov).
