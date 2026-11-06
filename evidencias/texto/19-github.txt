@@ -1,13 +1,17 @@
 $ gh repo view Owito/poli-ic-proyecto1 --json name,visibility,defaultBranchRef,url
-{"defaultBranchRef":{"name":"main"},"name":"poli-ic-proyecto1","url":"https://github.com/Owito/poli-ic-proyecto1","visibility":"PRIVATE"}
+{"defaultBranchRef":{"name":"main"},"name":"poli-ic-proyecto1","url":"https://github.com/Owito/poli-ic-proyecto1","visibility":"PUBLIC"}
 
 $ git ls-remote origin main
-04b0da775e39444462add6f4d43ab25e890aed62	refs/heads/main
+497097d8923db6c234b9e3c682196ecac9d9087d	refs/heads/main
 
 $ gh api repos/Owito/poli-ic-proyecto1/commits --jq '.[] | .sha[0:7] + " " + .commit.author.name + " | " + (.commit.message | split("\n")[0])'
+497097d Carloswar | docs: evidencia del repositorio publicado en GitHub
 04b0da7 Carloswar | docs: portada con código del curso, facultad y código de Carlos
 991d52f Carloswar | docs: nota propia en la figura del diagrama y PDF con índice actualizado
 be15a8e Carloswar | docs: documento APA de la Entrega 1, evidencias y auditoría
 fd9a94f Carloswar | docs: README con instrucciones para levantar el proyecto
 dfb39ca Carloswar | feat: contenedores de la API y la base de datos con Docker Compose
 b11b9da Carloswar | feat: API REST de tareas con Express y PostgreSQL
+
+$ curl -s -o /dev/null -w 'sin iniciar sesion -> HTTP %{http_code}\n' https://github.com/Owito/poli-ic-proyecto1
+sin iniciar sesion -> HTTP 200

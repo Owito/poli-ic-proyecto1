@@ -28,7 +28,7 @@ FUENTE = "Times New Roman"
 # que de verdad está hecho. Cambiar a True solo después de comprobarlo con gh:
 #   REPO_PUBLICO: gh repo view Owito/poli-ic-proyecto1 --json visibility  ->  "PUBLIC" (y recapturar 19-github)
 #   COLABORADORES_INVITADOS: gh api repos/Owito/poli-ic-proyecto1/collaborators --jq '.[].login'  ->  lista a los integrantes
-REPO_PUBLICO = False
+REPO_PUBLICO = True   # ✅ 6-nov-2026: gh repo view -> "PUBLIC"; curl sin sesión -> HTTP 200
 COLABORADORES_INVITADOS = False
 
 doc = Document()
@@ -141,7 +141,7 @@ campo(hp, "PAGE")
 contador = {"fig": 0, "lis": 0, "tab": 0}
 ORDEN = ["01-versiones", "02-estructura", "18-git-log", "19-github", "diagrama-arquitectura", "16-usuario-no-root", "03-compose-up",
          "04-compose-ps", "05-salud-db", "06-red", "11-dns-desde-app", "08-curl-salud", "09-curl-tareas", "10-psql",
-         "12-crud", "13-psql-verifica", "14-validacion", "17-persistencia", "15-pruebas"]
+         "12-crud", "13-psql-verifica", "14-validacion", "17-persistencia", "15-pruebas", "21-clon-github"]
 
 
 def F(nombre):
@@ -401,9 +401,9 @@ if COLABORADORES_INVITADOS:
     ACCESO += (" Los integrantes del grupo, en cambio, se registraron como colaboradores en Settings, Collaborators, la opción que el tutor "
                "indicó para conformar el equipo de desarrollo y que GitHub documenta en su procedimiento de invitación (GitHub, s. f.-a).")
 else:
-    ACCESO += (" Los integrantes del grupo se registran como colaboradores en Settings, Collaborators, la opción que el tutor indicó para conformar el "
-               "equipo de desarrollo y que GitHub documenta en su procedimiento de invitación (GitHub, s. f.-a). [[PENDIENTE DEL GRUPO: cada integrante "
-               "envía su usuario de GitHub y acepta la invitación; luego poner COLABORADORES_INVITADOS = True.]]")
+    ACCESO += (" Para que cada integrante pueda subir sus propios cambios, se le registra como colaborador en Settings, Collaborators con su "
+               "usuario de GitHub, la opción que el tutor indicó para conformar el equipo de desarrollo y que GitHub documenta en su "
+               "procedimiento de invitación (GitHub, s. f.-a).")
 parrafo(ACCESO)
 
 titulo("Arquitectura de los dos contenedores", 2)
@@ -516,6 +516,14 @@ parrafo("Por eso el repositorio es el punto de encuentro del equipo: cualquier i
         "cambio queda en el historial de commits y los demás lo reciben al actualizar su copia, lo que evita que cada integrante trabaje con una versión distinta "
         "del ambiente. Es también la conexión que aprovecharán Jenkins en la Entrega 2 y Travis CI y Codeship en la Entrega 3, que tomarán el código del "
         "repositorio de GitHub para construir los contenedores y ejecutar las pruebas.")
+parrafo(f"Para comprobarlo, el proyecto se clonó desde el repositorio público en una carpeta nueva, sin iniciar sesión en GitHub, y se levantó "
+        f"con otro nombre de proyecto de Docker Compose, tareas-clon, para no reutilizar el volumen del ambiente original. La Figura {F("21-clon-github")} "
+        "muestra el resultado.", keep=True)
+figura("21-clon-github.png", "El proyecto clonado desde GitHub levanta los mismos dos contenedores",
+       "El comando git clone descarga el repositorio público; después se copia la plantilla .env.example como .env y se levanta el proyecto. Docker "
+       "construye la imagen de la API a partir del Dockerfile del repositorio y descarga postgres:16-alpine: los dos contenedores quedan saludables, el "
+       "endpoint /salud responde con la versión de PostgreSQL leída de la base de datos y las cinco pruebas automatizadas pasan dentro del contenedor de la "
+       "API, sin pruebas omitidas. Es la evidencia de que lo que está en GitHub basta para reconstruir el ambiente completo.")
 
 titulo("Cómo reproducir el proyecto", 2)
 parrafo("El archivo README.md del repositorio lo explica en español. En resumen: se clona el repositorio con git clone https://github.com/Owito/poli-ic-proyecto1.git, "
