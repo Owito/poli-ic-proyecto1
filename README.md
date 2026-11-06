@@ -9,6 +9,17 @@ Proyecto del módulo **Énfasis Profesional I (Integración Continua)**, Polité
 
 Ambos están en la red `red-tareas`; la API llega a la base por el nombre de servicio `db`. Todos los datos de ejemplo son ficticios.
 
+## Repositorio
+
+https://github.com/Owito/poli-ic-proyecto1
+
+```bash
+git clone https://github.com/Owito/poli-ic-proyecto1.git
+cd poli-ic-proyecto1
+```
+
+El repositorio guarda el `Dockerfile` y el `docker-compose.yml`, no las imágenes: al ejecutar `docker compose up -d --build`, Docker construye la imagen de la API y descarga `postgres:16-alpine` de Docker Hub.
+
 ## Requisitos
 
 - Docker Desktop (o Docker Engine) con Docker Compose v2.

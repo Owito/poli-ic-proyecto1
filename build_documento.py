@@ -24,6 +24,13 @@ EVID = RAIZ / "evidencias"
 SALIDA = RAIZ / "docs" / "Entrega1_IC_Proyecto1.docx"
 FUENTE = "Times New Roman"
 
+# Estado del repositorio en GitHub. El texto del documento cambia según estos dos valores, para que siempre diga lo
+# que de verdad está hecho. Cambiar a True solo después de comprobarlo con gh:
+#   REPO_PUBLICO: gh repo view Owito/poli-ic-proyecto1 --json visibility  ->  "PUBLIC" (y recapturar 19-github)
+#   COLABORADORES_INVITADOS: gh api repos/Owito/poli-ic-proyecto1/collaborators --jq '.[].login'  ->  lista a los integrantes
+REPO_PUBLICO = False
+COLABORADORES_INVITADOS = False
+
 doc = Document()
 
 # ---------------------------------------------------------------- estilos
@@ -264,12 +271,13 @@ centrado("TIC 42711: Integración Continua, grupo B04")
 centrado("Grupo de trabajo colaborativo 14")
 centrado("Tutor: Edward Reyes Corredor")
 centrado("Noviembre de 2026")
-salto()
 
 # ================================================================ TABLA DE CONTENIDO
-p = doc.add_paragraph(style="Heading 1"); p.add_run("Tabla de contenido")
-# El título anterior no debe entrar al índice: se le quita el nivel de esquema.
-ppr = p._p.get_or_add_pPr(); ol = OxmlElement("w:outlineLvl"); ol.set(qn("w:val"), "9"); ppr.append(ol)
+# Título con formato directo (no Heading 1) para que el campo TOC no lo liste; el salto de página va en el propio
+# párrafo para no dejar una hoja en blanco cuando la portada llena la página 1.
+p = doc.add_paragraph(); p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+p.paragraph_format.page_break_before = True
+p.add_run("Tabla de contenido").bold = True
 ptoc = doc.add_paragraph(); ptoc.paragraph_format.line_spacing_rule = WD_LINE_SPACING.SINGLE
 campo(ptoc, 'TOC \\o "1-3" \\h \\z \\u', "Haga clic derecho y elija Actualizar campo para generar la tabla de contenido.")
 salto()
@@ -282,19 +290,23 @@ parrafo("La integración continua es una práctica del desarrollo de software en
         "debe poder construirse y ejecutarse de la misma manera en cualquier equipo. Docker resuelve ese punto: empaqueta la "
         "aplicación y sus dependencias en contenedores que se comportan igual en el computador de cada integrante y, más "
         "adelante, en un servidor de integración continua.")
+parrafo("A diferencia de una máquina virtual, que instala un sistema operativo completo sobre un hipervisor, Docker aprovecha el núcleo del sistema "
+        "operativo del equipo anfitrión y empaqueta solo la aplicación con sus librerías, su configuración y sus dependencias, lo que permite que funcione "
+        "igual en cualquier computador (Reyes Corredor, 2026).")
 parrafo("Este documento corresponde a la Entrega 1 del proyecto del módulo. El enunciado indica que el proyecto se crea en un "
         "repositorio de GitHub y que, con Docker, se construyen dos contenedores comunicados entre sí. Para cumplirlo se desarrolló "
         "una API REST de registro de tareas del equipo con Node.js y Express, que guarda sus datos en una base de datos PostgreSQL. "
         "La API corre en un contenedor y la base de datos en otro; ambos se orquestan con Docker Compose. El dominio es deliberadamente "
         "sencillo, porque las entregas siguientes (Jenkins, Travis CI y Codeship) necesitan una aplicación con pruebas automatizadas "
-        "sobre la cual construir los flujos de integración continua.")
+        "sobre la cual construir los flujos de integración continua. El repositorio del proyecto está disponible en "
+        "https://github.com/Owito/poli-ic-proyecto1.")
 parrafo("Cada captura de pantalla que aparece en el documento es la salida real de un comando ejecutado durante la elaboración del trabajo, "
         "y va acompañada de una explicación de lo que muestra y de por qué importa para el proyecto.")
 titulo("Objetivo general", 2)
 parrafo("Construir y ejecutar con Docker una aplicación de dos contenedores, una API en Node.js y una base de datos PostgreSQL, que se "
         "comuniquen entre sí, y documentar con evidencias el proceso para que sirva de base a las entregas de integración continua.")
 titulo("Objetivos específicos", 2)
-parrafo("Primero, organizar el proyecto en un repositorio de control de versiones con una estructura clara, listo para publicarse en GitHub.")
+parrafo("Primero, organizar el proyecto en un repositorio de control de versiones con una estructura clara, publicarlo en GitHub y compartirlo con los integrantes del grupo y con el tutor.")
 parrafo("Segundo, definir un Dockerfile para la API y un archivo de Docker Compose que levante los dos servicios en una red propia, con volumen "
         "persistente para la base de datos, comprobación de salud y orden de arranque.")
 parrafo("Tercero, demostrar con comandos reales que los dos contenedores se comunican: que la API consulta la base de datos y que los datos "
@@ -306,13 +318,15 @@ salto()
 titulo("Desarrollo", 1)
 titulo("Repositorio en GitHub y estructura del proyecto", 2)
 titulo("Elección del proyecto y de las herramientas", 3)
-parrafo("El tutor indicó que cada grupo escoge libremente el proyecto, siempre que permita aplicar las herramientas del módulo, y que se "
-        "prefieren herramientas libres, instalando solo las necesarias para el proyecto (Reyes Corredor, 2026). "
+parrafo("El tutor indicó que cada grupo escoge libremente el proyecto, siempre que sea proporcional y permita evidenciar que las herramientas del módulo se "
+        "integran, y que se prefieren herramientas libres, instalando solo las necesarias para el proyecto (Reyes Corredor, 2026). "
         "Por eso se eligió un registro de tareas del equipo: tiene un modelo de datos de una sola tabla, un CRUD completo y suficiente "
         "lógica de validación para escribir pruebas útiles. Todas las herramientas usadas son libres o de uso gratuito: Git para el control de versiones, "
         "GitHub como servicio del repositorio remoto, Docker y Docker Compose para los contenedores, Node.js 22 con el marco Express para la API "
         "(Express, s. f.) y PostgreSQL 16 como base de datos (PostgreSQL Global Development Group, s. f.). Node.js y Git se instalan en el equipo "
-        "porque se usan para escribir el código y las pruebas; PostgreSQL no se instala en el equipo, solo corre dentro de su contenedor.")
+        "porque se usan para escribir el código y las pruebas; PostgreSQL no se instala en el equipo, solo corre dentro de su contenedor. "
+        f"Como indicó el tutor, no se documenta el paso detallado de la instalación de Docker y de Git; la Figura {F("01-versiones")} deja constancia de que están "
+        "instalados y de las versiones con las que se trabajó (Reyes Corredor, 2026).")
 figura("01-versiones.png", "Versiones de las herramientas utilizadas",
        "El comando imprime las versiones de Docker, Docker Compose, Git y Node.js instaladas en el equipo donde se construyó el proyecto. "
        "Sirve para que cualquier persona que reproduzca el trabajo sepa con qué versiones se verificó, y se relaciona con la recomendación del tutor de "
@@ -340,15 +354,57 @@ parrafo(f"El proyecto se desarrolló en un repositorio Git con commits pequeños
 figura("18-git-log.png", "Historial de commits del repositorio",
        "Cada línea de cabecera es un commit con su identificador corto, autor, fecha y mensaje, seguida de los archivos que modificó. Confirma que el trabajo "
        "quedó registrado por etapas: primero la API, luego los contenedores y después la documentación.")
-parrafo("Los repositorios de GitHub se describen en su documentación oficial (GitHub, s. f.-b). El proyecto se publicó en un repositorio privado de "
-        f"GitHub, https://github.com/Owito/poli-ic-proyecto1, enlazado como remoto origin del repositorio local. La Figura {F("19-github")} muestra la "
-        "consulta del repositorio publicado y su historial en GitHub. [[CONFIRMAR: si otros integrantes agregan commits, el historial mostrará el aporte de cada uno.]]", keep=True)
-figura("19-github.png", "Repositorio publicado en GitHub",
-       "La primera consulta confirma el nombre, la visibilidad privada, la rama principal main y la dirección del repositorio. La segunda muestra que la "
-       "rama main de GitHub apunta al mismo commit que el repositorio local, y la tercera lista el historial tal como quedó publicado.")
-parrafo("Para que el tutor pueda revisar el proyecto, el repositorio debe darle acceso como colaborador, es decir, como usuario de desarrollo, tal como lo "
-        "pidió en el encuentro del 26 de octubre de 2026 (Reyes Corredor, 2026). GitHub documenta el procedimiento de invitación (GitHub, s. f.-a). "
-        "[[PENDIENTE DEL GRUPO: invitar al tutor Edward Reyes Corredor con el usuario de GitHub que él indique y comprobar que puede entrar.]]")
+parrafo("El repositorio remoto se creó el 5 de noviembre de 2026 con la herramienta de línea de comandos de GitHub, gh, y después se enlazó con el "
+        "repositorio local para subir el historial. La Tabla 2 resume ese paso a paso. El mismo resultado se obtiene desde la página web de GitHub, con la "
+        "opción New repository del menú que abre el signo más, arriba a la derecha, como lo mostró el tutor en el encuentro del 5 de noviembre "
+        "(Reyes Corredor, 2026).", keep=True)
+PASOS_REPO = [
+    ["1", "gh repo create Owito/poli-ic-proyecto1 --private --description \"Proyecto de Integración Continua: API de tareas en Node.js y PostgreSQL con Docker Compose\"",
+     "Crea el repositorio vacío en la cuenta de GitHub, con su descripción."],
+    ["2", "git remote add origin https://github.com/Owito/poli-ic-proyecto1.git",
+     "Registra el repositorio de GitHub como remoto origin del repositorio local."],
+    ["3", "git push -u origin HEAD:main",
+     "Sube los commits a la rama main de GitHub y deja configurado el seguimiento entre la rama local y la remota."],
+]
+if REPO_PUBLICO:
+    PASOS_REPO.append([str(len(PASOS_REPO) + 1), "gh repo edit Owito/poli-ic-proyecto1 --visibility public --accept-visibility-change-consequences",
+                       "Cambia la visibilidad a pública, como recomendó el tutor, para que pueda entrar con el enlace."])
+if COLABORADORES_INVITADOS:
+    PASOS_REPO.append([str(len(PASOS_REPO) + 1), "Settings, Collaborators, Add people (página web de GitHub)",
+                       "Invita a cada integrante como colaborador; el acceso queda activo cuando el integrante acepta la invitación."])
+tabla("Pasos para crear el repositorio en GitHub y publicar el proyecto", ["Paso", "Comando", "Qué hace"], PASOS_REPO, [0.5, 3.2, 2.8])
+if REPO_PUBLICO:
+    parrafo("Los repositorios de GitHub se describen en su documentación oficial (GitHub, s. f.-b). El proyecto está publicado en un repositorio público de "
+            "GitHub, https://github.com/Owito/poli-ic-proyecto1, enlazado como remoto origin del repositorio local. Se creó como privado y se cambió a público "
+            "por recomendación del tutor, para que él pueda entrar a validarlo y para que las herramientas de integración continua muestren los errores donde "
+            f"los encuentren (Reyes Corredor, 2026). La Figura {F("19-github")} muestra la consulta del repositorio publicado y su historial en GitHub.", keep=True)
+    figura("19-github.png", "Repositorio publicado en GitHub",
+           "La primera consulta confirma el nombre, la visibilidad pública, la rama principal main y la dirección del repositorio. La segunda muestra que la "
+           "rama main de GitHub apunta al mismo commit que el repositorio local, y la tercera lista el historial tal como quedó publicado. La cuarta pide la "
+           "página del repositorio sin iniciar sesión y recibe la respuesta HTTP 200: cualquier persona con el enlace, incluido el tutor, puede abrirlo.")
+else:
+    parrafo("Los repositorios de GitHub se describen en su documentación oficial (GitHub, s. f.-b). El proyecto se publicó en un repositorio privado de "
+            f"GitHub, https://github.com/Owito/poli-ic-proyecto1, enlazado como remoto origin del repositorio local. La Figura {F("19-github")} muestra la "
+            "consulta del repositorio publicado y su historial en GitHub.", keep=True)
+    figura("19-github.png", "Repositorio publicado en GitHub",
+           "La primera consulta confirma el nombre, la visibilidad privada, la rama principal main y la dirección del repositorio. La segunda muestra que la "
+           "rama main de GitHub apunta al mismo commit que el repositorio local, y la tercera lista el historial tal como quedó publicado.")
+ACCESO = ("Para revisar el proyecto, el tutor pidió entrar al repositorio y ver cómo están conformados el repositorio y los contenedores. En el encuentro del "
+          "5 de noviembre de 2026 aclaró que no comparte su usuario de GitHub y que acepta tres alternativas: crearle un usuario, dejar el repositorio público "
+          "o enviarle un enlace que le permita ingresar (Reyes Corredor, 2026). ")
+if REPO_PUBLICO:
+    ACCESO += "Con el repositorio público, el enlace anterior basta para que el tutor lo consulte sin cuenta ni invitación."
+else:
+    ACCESO += ("[[DECISIÓN DEL GRUPO: el tutor recomendó dejarlo público; al cambiar la visibilidad, poner REPO_PUBLICO = True en "
+               "build_documento.py, recapturar la Figura de GitHub y regenerar.]]")
+if COLABORADORES_INVITADOS:
+    ACCESO += (" Los integrantes del grupo, en cambio, se registraron como colaboradores en Settings, Collaborators, la opción que el tutor "
+               "indicó para conformar el equipo de desarrollo y que GitHub documenta en su procedimiento de invitación (GitHub, s. f.-a).")
+else:
+    ACCESO += (" Los integrantes del grupo se registran como colaboradores en Settings, Collaborators, la opción que el tutor indicó para conformar el "
+               "equipo de desarrollo y que GitHub documenta en su procedimiento de invitación (GitHub, s. f.-a). [[PENDIENTE DEL GRUPO: cada integrante "
+               "envía su usuario de GitHub y acepta la invitación; luego poner COLABORADORES_INVITADOS = True.]]")
+parrafo(ACCESO)
 
 titulo("Arquitectura de los dos contenedores", 2)
 parrafo("La solución tiene dos servicios que Docker Compose crea y conecta en una misma red. El primero, app, ejecuta la API de Node.js. "
@@ -398,6 +454,10 @@ figura("03-compose-up.png", "Construcción y arranque con docker compose up",
 figura("04-compose-ps.png", "Estado de los dos contenedores",
        "docker compose ps lista los dos servicios del proyecto. tareas-db aparece con estado healthy, lo que significa que su healthcheck está pasando, y tareas-app aparece en ejecución "
        "con el puerto 8095 del equipo redirigido al 3000 del contenedor. La base de datos solo muestra su puerto interno 5432, sin publicarlo hacia afuera.")
+parrafo(f"La Figura {F("04-compose-ps")} también permite distinguir imagen y contenedor. La imagen es la plantilla a partir de la cual se crea el contenedor; "
+        "el tutor la comparó con el plano de una casa, y al contenedor con la casa ya construida (Reyes Corredor, 2026). En este proyecto hay dos imágenes, "
+        "tareas-equipo-app, construida desde el Dockerfile, y postgres:16-alpine, descargada de Docker Hub, y de cada una se crea un contenedor: tareas-app "
+        "y tareas-db.")
 figura("05-salud-db.png", "Estado de salud reportado por Docker",
        "docker inspect lee directamente el estado de salud que Docker registra para tareas-db: running y healthy. Es la misma información que usa depends_on para decidir cuándo arrancar la API.")
 
@@ -445,21 +505,37 @@ figura("15-pruebas.png", "Ejecución de las pruebas dentro del contenedor de la 
        "El resumen final reporta cinco pruebas, cinco aprobadas y cero fallidas.")
 parrafo("Estas mismas pruebas se ejecutarán desde Jenkins en la Entrega 2 y desde Travis CI y Codeship en la Entrega 3, ya que el comando npm test no depende de ninguna herramienta específica.")
 
+titulo("Conexión entre GitHub y Docker", 2)
+parrafo("El tutor precisó que el alcance de esta entrega es trabajar con GitHub, construir los dos contenedores con Docker y conectar Docker con GitHub "
+        "(Reyes Corredor, 2026). En este proyecto la conexión se da a través de los archivos que definen los contenedores. GitHub no guarda las imágenes ni "
+        "los contenedores, sino las instrucciones para construirlos: el Dockerfile de la API, el archivo docker-compose.yml con los dos servicios, la red y el "
+        f"volumen, el script db/init.sql y la plantilla .env.example, todos visibles en la Figura {F("02-estructura")}. A partir de esos archivos, Docker construye "
+        "la imagen de la API en el equipo de quien ejecuta el proyecto y descarga de Docker Hub la imagen oficial postgres:16-alpine (Docker Inc., s. f.-e).")
+parrafo("Por eso el repositorio es el punto de encuentro del equipo: cualquier integrante, o el tutor, clona el repositorio y ejecuta docker compose up -d --build "
+        "para obtener los mismos dos contenedores, con la misma red y la misma configuración. Cuando alguien modifica el Dockerfile o el docker-compose.yml, el "
+        "cambio queda en el historial de commits y los demás lo reciben al actualizar su copia, lo que evita que cada integrante trabaje con una versión distinta "
+        "del ambiente. Es también la conexión que aprovecharán Jenkins en la Entrega 2 y Travis CI y Codeship en la Entrega 3, que tomarán el código del "
+        "repositorio de GitHub para construir los contenedores y ejecutar las pruebas.")
+
 titulo("Cómo reproducir el proyecto", 2)
-parrafo("El archivo README.md del repositorio lo explica en español. En resumen: se copia .env.example como .env y se cambia la clave, se ejecuta docker compose up -d --build, se verifica con docker compose ps "
+parrafo("El archivo README.md del repositorio lo explica en español. En resumen: se clona el repositorio con git clone https://github.com/Owito/poli-ic-proyecto1.git, "
+        "se copia .env.example como .env y se cambia la clave, se ejecuta docker compose up -d --build, se verifica con docker compose ps "
         "y se consultan http://localhost:8095/salud y http://localhost:8095/tareas. Para detenerlo se usa docker compose down.")
 
 # ================================================================ CONCLUSIONES
 salto()
 titulo("Conclusiones", 1)
 parrafo("Se construyó una aplicación de dos contenedores, una API en Node.js y una base de datos PostgreSQL, que se ejecuta con un solo comando y que se comunica a través de una red definida por el proyecto. "
-        "La comunicación se demostró con evidencia verificable: la red contiene a ambos contenedores, el nombre db se resuelve desde la API, y los datos que devuelve la API coinciden con los de la base de datos.")
+        "La comunicación se demostró con evidencia verificable: la red contiene a ambos contenedores, el nombre db se resuelve desde la API, y los datos que devuelve la API coinciden con los de la base de datos. "
+        "Además, como el repositorio de GitHub guarda la definición de los contenedores y no las imágenes, cualquier integrante obtiene el mismo ambiente "
+        "a partir de una copia del repositorio y un solo comando, que es la conexión entre GitHub y Docker en la que se apoyarán las entregas siguientes.")
 parrafo("El uso de healthcheck y depends_on con condición evita un error común de arranque, en el que la aplicación intenta conectarse antes de que la base de datos esté lista. El volumen asegura que los datos "
         "persistan, y la separación de configuración en .env permite publicar el proyecto sin exponer claves. El Dockerfile multietapa con usuario sin privilegios produce una imagen más pequeña y más segura.")
 parrafo("Las pruebas automatizadas quedaron listas para integrarse en las siguientes entregas. Como el comando npm test funciona dentro y fuera de Docker, Jenkins, Travis CI y Codeship podrán ejecutarlo sin cambios en la aplicación. "
         "Como aprendizaje del grupo, la integración continua depende de contar primero con un entorno reproducible; Docker aporta esa base.")
-parrafo("Como limitaciones, el proyecto aún no tiene un flujo de integración continua, que corresponde a la Entrega 2, y las pruebas de integración dependen de que la base de datos esté disponible. "
-        "[[PENDIENTE DEL GRUPO: agregar una conclusión con la experiencia del equipo y la distribución del trabajo, y completar las secciones de GitHub marcadas.]]")
+parrafo("Como limitaciones, el proyecto aún no tiene un flujo de integración continua, que corresponde a la Entrega 2, y las pruebas de integración dependen de que la base de datos esté disponible.")
+# Párrafo del grupo (experiencia y distribución del trabajo): lo escribe el grupo y va aquí. Si no llega antes del
+# cierre, se omite y la sección queda completa sin él.
 
 # ================================================================ REFERENCIAS
 salto()
@@ -477,7 +553,7 @@ REF = [
     "GitHub. (s. f.-b). *Repositories documentation*. GitHub Docs. Recuperado el 5 de noviembre de 2026, de https://docs.github.com/en/repositories",
     "Node.js. (s. f.). *Test runner*. Node.js v22 documentation. Recuperado el 5 de noviembre de 2026, de https://nodejs.org/docs/latest-v22.x/api/test.html",
     "PostgreSQL Global Development Group. (s. f.). *PostgreSQL 16 documentation*. Recuperado el 5 de noviembre de 2026, de https://www.postgresql.org/docs/16/",
-    "Reyes Corredor, E. (2026, 19 y 26 de octubre). *Encuentros sincrónicos de Énfasis Profesional I (Integración Continua)* [Grabaciones de clase]. Politécnico Grancolombiano.",
+    "Reyes Corredor, E. (2026, 19 y 26 de octubre, y 5 de noviembre). *Encuentros sincrónicos de Énfasis Profesional I (Integración Continua)* [Grabaciones de clase]. Politécnico Grancolombiano.",
 ]
 for r in REF:
     p = doc.add_paragraph()
