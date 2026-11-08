@@ -1,0 +1,29 @@
+$ git clone https://github.com/Owito/poli-ic-proyecto1.git
+Cloning into 'poli-ic-proyecto1'...
+
+$ cd poli-ic-proyecto1 && cp .env.example .env
+
+$ docker compose -p tareas-clon up -d --build --wait 2>&1 | tail -8
+ Container tareas-db Waiting 
+ Container tareas-db Healthy 
+ Container tareas-app Starting 
+ Container tareas-app Started 
+ Container tareas-db Waiting 
+ Container tareas-app Waiting 
+ Container tareas-app Healthy 
+ Container tareas-db Healthy 
+
+$ docker compose -p tareas-clon ps --format 'table {{.Name}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}'
+NAME         IMAGE                STATUS                   PORTS
+tareas-app   tareas-clon-app      Up Less than a second    0.0.0.0:8095->3000/tcp, [::]:8095->3000/tcp
+tareas-db    postgres:16-alpine   Up 6 seconds (healthy)   5432/tcp
+
+$ curl -s http://localhost:8095/salud
+{"estado":"ok","base_de_datos":"tareas","version":"PostgreSQL 16.14 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit","hora_bd":"2026-11-06T10:32:29.712Z"}
+
+$ docker compose -p tareas-clon exec -T app npm test 2>&1 | grep -E '^# (tests|pass|fail|skipped)'
+# tests 5
+# pass 5
+# fail 0
+# skipped 0
+
