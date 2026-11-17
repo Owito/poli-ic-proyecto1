@@ -6,3 +6,6 @@ docs
 *.md
 *.docx
 *.pdf
+.npm-cache
+jenkins
+Jenkinsfile
