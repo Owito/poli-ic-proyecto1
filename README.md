@@ -51,13 +51,32 @@ Para detener: `docker compose down` (conserva los datos). Para borrar también e
 
 ## Pruebas automatizadas
 
-Usan el ejecutor nativo `node:test`, sin dependencias adicionales. Son las que ejecutarán Jenkins (Entrega 2) y Travis CI y Codeship (Entrega 3).
+Usan el ejecutor nativo `node:test`, sin dependencias adicionales. Son las que ejecuta Jenkins (Entrega 2) y las que ejecutarán Travis CI y Codeship (Entrega 3).
 
 ```bash
 npm ci
 npm test                                  # pruebas unitarias; la de integración se omite sin DB_HOST
 docker compose exec app npm test          # unitarias + integración contra la base real
 ```
+
+## Integración continua con Jenkins (Entrega 2)
+
+El archivo `Jenkinsfile` define el pipeline: descarga el código, corre las pruebas unitarias dentro de un contenedor
+`node:22-alpine`, construye la imagen de la API, levanta los dos contenedores, verifica `/salud`, corre las pruebas de
+integración y al final borra todo. Jenkins revisa la rama cada dos minutos (`pollSCM`) y lo ejecuta si hay commits nuevos.
+
+Jenkins corre en Docker, según la guía oficial de jenkins.io (contenedor `jenkins` + motor `docker:dind`):
+
+```powershell
+git clone --bare . C:/ruta/repo.git                 # copia que lee Jenkins mientras la rama no esté en GitHub
+powershell -File jenkins/levantar.ps1 -Espejo C:/ruta/repo.git
+# abrir http://localhost:8181, completar el asistente y crear:
+#  - la credencial "tareas-db-password" (Secret text) con la clave de PostgreSQL
+#  - el trabajo "tareas-equipo" (Pipeline script from SCM, Git, rama */poli-trabajos/ic-proyecto2-jenkins)
+```
+
+El trabajo `tareas-equipo-github` (script en `jenkins/tareas-equipo-github.groovy`) descarga `main` desde GitHub y corre
+las pruebas unitarias. El documento de la entrega es `docs/Entrega2_IC_Proyecto.pdf` y su auditoría `AUDITORIA_ENTREGA2.md`.
 
 ## Estructura
 
@@ -68,6 +87,8 @@ docker-compose.yml      servicios app y db, red, volumen, healthcheck
 db/init.sql             esquema y datos de ejemplo
 src/                    API (app.js, db.js, server.js)
 tests/                  pruebas unitarias y de integración
+Jenkinsfile             pipeline de integración continua (Entrega 2)
+jenkins/                imagen y script de arranque de Jenkins con Docker
 ```
 
 ## Variables de entorno

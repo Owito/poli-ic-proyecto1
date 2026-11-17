@@ -1,0 +1,5 @@
+$ git push jenkins-local poli-trabajos/ic-proyecto2-jenkins; git ls-remote jenkins-local poli-trabajos/ic-proyecto2-jenkins; git log -1 --format='%h %s'
+To C:/Users/fgogu/poli-ic-proyecto2-jenkins-local/repo.git
+   35489a5..d06d969  poli-trabajos/ic-proyecto2-jenkins -> poli-trabajos/ic-proyecto2-jenkins
+d06d9696abf5e4fe2df58aa6b2d4cc284613366e	refs/heads/poli-trabajos/ic-proyecto2-jenkins
+d06d969 feat: título por defecto cuando la tarea llega sin título

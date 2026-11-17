@@ -1,0 +1,16 @@
+$ curl -s -u <usuario>:<clave> http://localhost:8181/job/tareas-equipo-github/1/consoleText | (líneas clave)
+Started by user Administrador del proyecto
+[Pipeline] { (Descargar desde GitHub)
+Cloning repository https://github.com/Owito/poli-ic-proyecto1.git
+Commit 190bf46 de Carlos G: docs: portada final con los integrantes (#3)
+[Pipeline] { (Pruebas unitarias)
+ok 1 - POST /tareas sin titulo responde 400
+ok 2 - GET /tareas con estado inválido responde 400
+ok 3 - GET /tareas/:id inexistente responde 404
+ok 4 - GET /salud responde 503 si la BD falla
+ok 5 - integración: salud, crear, leer, actualizar y borrar una tarea # SKIP sin DB_HOST: prueba de integración omitida
+# tests 5
+# pass 4
+# fail 0
+# skipped 1
+Finished: SUCCESS

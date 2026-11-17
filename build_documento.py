@@ -1,8 +1,11 @@
-"""Genera docs/Entrega1_IC_Proyecto1.docx (APA 7) a partir de las evidencias reales.
+"""Genera docs/Entrega2_IC_Proyecto.docx (APA 7): el documento del proyecto con la primera parte (Docker, Entrega 1)
+y la segunda parte (Jenkins, Entrega 2), a partir de las evidencias reales.
 
 Uso:
-    python tools/diagrama.py          (diagrama)
-    bash tools/capturar.sh            (ejecuta los comandos y genera los PNG; requiere Docker)
+    python tools/diagrama.py; python tools/diagrama_jenkins.py      (diagramas)
+    bash tools/capturar.sh            (evidencias de la primera parte; requiere Docker)
+    bash tools/capturar_jenkins.sh ...   (evidencias de terminal de la segunda parte; ver el script)
+    python tools/jenkins_capturas.py ... (capturas de la interfaz de Jenkins; requiere Playwright)
     python build_documento.py         (arma el .docx)
     powershell -File tools/exportar_pdf.ps1   (actualiza la tabla de contenido y exporta el PDF con Word)
 
@@ -21,7 +24,7 @@ from docx.shared import Inches, Pt, RGBColor
 
 RAIZ = Path(__file__).resolve().parent
 EVID = RAIZ / "evidencias"
-SALIDA = RAIZ / "docs" / "Entrega1_IC_Proyecto1.docx"
+SALIDA = RAIZ / "docs" / "Entrega2_IC_Proyecto.docx"
 FUENTE = "Times New Roman"
 
 # Estado del repositorio en GitHub. El texto del documento cambia según estos dos valores, para que siempre diga lo
@@ -141,7 +144,16 @@ campo(hp, "PAGE")
 contador = {"fig": 0, "lis": 0, "tab": 0}
 ORDEN = ["01-versiones", "02-estructura", "18-git-log", "19-github", "diagrama-arquitectura", "16-usuario-no-root", "03-compose-up",
          "04-compose-ps", "05-salud-db", "06-red", "11-dns-desde-app", "08-curl-salud", "09-curl-tareas", "10-psql",
-         "12-crud", "13-psql-verifica", "14-validacion", "17-persistencia", "15-pruebas", "21-clon-github"]
+         "12-crud", "13-psql-verifica", "14-validacion", "17-persistencia", "15-pruebas", "21-clon-github",
+         # Segunda parte (Jenkins)
+         "diagrama-jenkins", "j01-levantar", "j09-cliente-docker", "j02-desbloqueo", "j03-personalizar",
+         "j04-instalando-plugins", "j05-primer-administrador", "j08-tablero-inicial", "j10-credencial",
+         "j12-configuracion-scm", "j12b-ruta-jenkinsfile", "j15-etapas-verde", "j21-consola-verde", "j13-espejo",
+         "j17-etapas-rojo", "j22-consola-rojo", "j20-etapas-historial", "j11-nuevo-trabajo", "j16-script-github",
+         "j18-github-ejecucion", "j23-consola-github"]
+# Evidencias de la segunda parte que son salida de terminal (las demás "j" son capturas de la interfaz de Jenkins).
+J_TERMINAL = {"j01-levantar", "j09-cliente-docker", "j13-espejo"}
+J_CONSOLA = {"j21-consola-verde", "j22-consola-rojo", "j23-consola-github"}
 
 
 def F(nombre):
@@ -172,8 +184,18 @@ def figura(png, titulo_fig, explicacion, ancho=6.5):
     pn = doc.add_paragraph(); pn.paragraph_format.line_spacing_rule = WD_LINE_SPACING.SINGLE
     pn.paragraph_format.space_after = Pt(10)
     rn = pn.add_run("Nota. "); rn.italic = True
-    pn.add_run("Elaboración propia." if png.startswith("diagrama") else
-               "Captura de la salida real del comando, generada durante la elaboración de este trabajo.")
+    nombre = png[:-4]
+    if png.startswith("diagrama"):
+        nota = "Elaboración propia."
+    elif nombre in J_CONSOLA:
+        nota = ("Extracto de la salida de consola real de la ejecución, leída con la API de Jenkins; se conservan solo "
+                "las líneas clave y se ocultan el usuario y la clave.")
+    elif nombre.startswith("j") and nombre not in J_TERMINAL:
+        nota = ("Captura de pantalla de la interfaz web de Jenkins (http://localhost:8181), tomada durante la "
+                "elaboración de este trabajo.")
+    else:
+        nota = "Captura de la salida real del comando, generada durante la elaboración de este trabajo."
+    pn.add_run(nota)
     parrafo(f"**Qué muestra la Figura {n}.** {explicacion}")
     return n
 
@@ -251,8 +273,8 @@ def centrado(texto, negrita=False, resaltar=False, simple=False):
 # ================================================================ PORTADA
 for _ in range(3):
     doc.add_paragraph()
-centrado("Proyecto de software con Docker: API de tareas del equipo en dos contenedores comunicados", negrita=True)
-centrado("Entrega 1, Proyecto 1, Escenario 3")
+centrado("Proyecto de software basado en herramientas de integración continua: API de tareas del equipo con Docker y Jenkins", negrita=True)
+centrado("Entrega 2, Proyecto 2, Escenario 5")
 doc.add_paragraph()
 centrado("Leonardo Espinosa Rivera")
 centrado("Daniel Santiago Estupiñán Cruz")
@@ -289,29 +311,39 @@ parrafo("La integración continua es una práctica del desarrollo de software en
 parrafo("A diferencia de una máquina virtual, que instala un sistema operativo completo sobre un hipervisor, Docker aprovecha el núcleo del sistema "
         "operativo del equipo anfitrión y empaqueta solo la aplicación con sus librerías, su configuración y sus dependencias, lo que permite que funcione "
         "igual en cualquier computador (Reyes Corredor, 2026).")
-parrafo("Este documento corresponde a la Entrega 1 del proyecto del módulo. El enunciado indica que el proyecto se crea en un "
-        "repositorio de GitHub y que, con Docker, se construyen dos contenedores comunicados entre sí. Para cumplirlo se desarrolló "
-        "una API REST de registro de tareas del equipo con Node.js y Express, que guarda sus datos en una base de datos PostgreSQL. "
-        "La API corre en un contenedor y la base de datos en otro; ambos se orquestan con Docker Compose. El dominio es deliberadamente "
-        "sencillo, porque las entregas siguientes (Jenkins, Travis CI y Codeship) necesitan una aplicación con pruebas automatizadas "
-        "sobre la cual construir los flujos de integración continua. El repositorio del proyecto está disponible en "
-        "https://github.com/Owito/poli-ic-proyecto1.")
-parrafo("Cada captura de pantalla que aparece en el documento es la salida real de un comando ejecutado durante la elaboración del trabajo, "
-        "y va acompañada de una explicación de lo que muestra y de por qué importa para el proyecto.")
+parrafo("Este documento reúne las dos primeras entregas del proyecto del módulo. Como indicó el tutor, cada entrega se agrega como una "
+        "parte nueva del mismo documento, de modo que al final todo el proyecto quede en uno solo (Reyes Corredor, 2026). La primera "
+        "parte corresponde a la Entrega 1: el enunciado indica que el proyecto se crea en un repositorio de GitHub y que, con Docker, se "
+        "construyen dos contenedores comunicados entre sí (Politécnico Grancolombiano, s. f.). Para cumplirlo se desarrolló una API REST de "
+        "registro de tareas del equipo con Node.js y Express, que guarda sus datos en una base de datos PostgreSQL. La API corre en un "
+        "contenedor y la base de datos en otro; ambos se orquestan con Docker Compose. El dominio es deliberadamente sencillo, porque las "
+        "entregas siguientes necesitan una aplicación con pruebas automatizadas sobre la cual construir los flujos de integración continua.")
+parrafo("La segunda parte corresponde a la Entrega 2. El enunciado pide aplicar la integración continua implementando Jenkins como gestor "
+        "de operaciones y entregar un documento con las características requeridas para su implementación (Politécnico Grancolombiano, "
+        "s. f.). Jenkins se instaló con Docker, se configuró desde su interfaz web y se conectó con el repositorio mediante un pipeline "
+        "escrito en un archivo Jenkinsfile que, ante cada cambio, ejecuta las pruebas, construye la imagen de la API, levanta los dos "
+        "contenedores y verifica que la API responda. El repositorio del proyecto está disponible en https://github.com/Owito/poli-ic-proyecto1.")
+parrafo("Cada captura de pantalla del documento es la salida real de un comando o una vista real de la interfaz de Jenkins, obtenida durante "
+        "la elaboración del trabajo, y va acompañada de una explicación de lo que muestra y de por qué importa para el proyecto.")
 titulo("Objetivo general", 2)
-parrafo("Construir y ejecutar con Docker una aplicación de dos contenedores, una API en Node.js y una base de datos PostgreSQL, que se "
-        "comuniquen entre sí, y documentar con evidencias el proceso para que sirva de base a las entregas de integración continua.")
+parrafo("Construir una aplicación de dos contenedores, una API en Node.js y una base de datos PostgreSQL, y automatizar su integración "
+        "continua con Jenkins, de modo que cada cambio en el repositorio se pruebe, se construya y se verifique sin pasos manuales, "
+        "documentando el proceso con evidencias.")
 titulo("Objetivos específicos", 2)
 parrafo("Primero, organizar el proyecto en un repositorio de control de versiones con una estructura clara, publicarlo en GitHub y compartirlo con los integrantes del grupo y con el tutor.")
 parrafo("Segundo, definir un Dockerfile para la API y un archivo de Docker Compose que levante los dos servicios en una red propia, con volumen "
         "persistente para la base de datos, comprobación de salud y orden de arranque.")
 parrafo("Tercero, demostrar con comandos reales que los dos contenedores se comunican: que la API consulta la base de datos y que los datos "
         "devueltos provienen de ella.")
-parrafo("Cuarto, escribir pruebas automatizadas que puedan ejecutarse más adelante desde las herramientas de integración continua.")
+parrafo("Cuarto, escribir pruebas automatizadas que puedan ejecutarse desde las herramientas de integración continua.")
+parrafo("Quinto, instalar y configurar Jenkins con Docker, e identificar las características y los requisitos que exige su implementación en el proyecto.")
+parrafo("Sexto, definir en un Jenkinsfile, versionado junto con el código, un pipeline que descargue el proyecto, ejecute las pruebas, construya "
+        "la imagen, levante los contenedores y verifique la API.")
+parrafo("Séptimo, comprobar que el pipeline se ejecuta solo cuando cambia el repositorio y que detiene la integración cuando una prueba falla.")
 
-# ================================================================ DESARROLLO
+# ================================================================ PRIMERA PARTE
 salto()
-titulo("Desarrollo", 1)
+titulo("Primera parte: el proyecto en dos contenedores con Docker", 1)
 titulo("Repositorio en GitHub y estructura del proyecto", 2)
 titulo("Elección del proyecto y de las herramientas", 3)
 parrafo("El tutor indicó que cada grupo escoge libremente el proyecto, siempre que sea proporcional y permita evidenciar que las herramientas del módulo se "
@@ -411,6 +443,7 @@ figura("diagrama-arquitectura.png", "Diagrama de la arquitectura de la solución
        "Ese contenedor se conecta por SQL con tareas-db usando el nombre de servicio db como dirección. Ambos viven en la red red-tareas. La base de datos "
        "guarda sus archivos en el volumen tareas-datos y recibe el script db/init.sql en el primer arranque. La flecha de depends_on indica que la API no arranca hasta que la base "
        "de datos pase su comprobación de salud.")
+parrafo(f"La Tabla {contador['tab'] + 1} resume la imagen, los puertos y la responsabilidad de cada contenedor.", keep=True)
 tabla("Los dos contenedores del proyecto", ["Servicio", "Contenedor", "Imagen", "Puerto", "Responsabilidad"], [
     ["app", "tareas-app", "Construida desde el Dockerfile (Node.js 22 sobre Alpine)", "3000 interno, 8095 publicado", "API REST de tareas y endpoint /salud"],
     ["db", "tareas-db", "postgres:16-alpine", "5432 solo dentro de la red", "Almacena las tareas de forma persistente"],
@@ -499,7 +532,8 @@ parrafo("Las pruebas usan el ejecutor integrado de Node.js, node:test, que no re
 figura("15-pruebas.png", "Ejecución de las pruebas dentro del contenedor de la API",
        "Dentro de tareas-app, donde la variable DB_HOST apunta a la base de datos, las cinco pruebas se ejecutan y pasan, sin pruebas omitidas, incluida la de integración contra el contenedor tareas-db. "
        "El resumen final reporta cinco pruebas, cinco aprobadas y cero fallidas.")
-parrafo("Estas mismas pruebas se ejecutarán desde Jenkins en la Entrega 2 y desde Travis CI y Codeship en la Entrega 3, ya que el comando npm test no depende de ninguna herramienta específica.")
+parrafo("Estas mismas pruebas son las que ejecuta Jenkins en la segunda parte de este documento, y las que ejecutarán Travis CI y Codeship en la "
+        "Entrega 3, ya que el comando npm test no depende de ninguna herramienta específica.")
 
 titulo("Conexión entre GitHub y Docker", 2)
 parrafo("El tutor precisó que el alcance de esta entrega es trabajar con GitHub, construir los dos contenedores con Docker y conectar Docker con GitHub "
@@ -510,8 +544,8 @@ parrafo("El tutor precisó que el alcance de esta entrega es trabajar con GitHub
 parrafo("Por eso el repositorio es el punto de encuentro del equipo: cualquier integrante, o el tutor, clona el repositorio y ejecuta docker compose up -d --build "
         "para obtener los mismos dos contenedores, con la misma red y la misma configuración. Cuando alguien modifica el Dockerfile o el docker-compose.yml, el "
         "cambio queda en el historial de commits y los demás lo reciben al actualizar su copia, lo que evita que cada integrante trabaje con una versión distinta "
-        "del ambiente. Es también la conexión que aprovecharán Jenkins en la Entrega 2 y Travis CI y Codeship en la Entrega 3, que tomarán el código del "
-        "repositorio de GitHub para construir los contenedores y ejecutar las pruebas.")
+        "del ambiente. Es también la conexión que aprovecha Jenkins en la segunda parte, y la que aprovecharán Travis CI y Codeship en la Entrega 3, "
+        "que toman el código del repositorio para construir los contenedores y ejecutar las pruebas.")
 parrafo(f"Para comprobarlo, el proyecto se clonó desde el repositorio público en una carpeta nueva, sin iniciar sesión en GitHub, y se levantó "
         f"con otro nombre de proyecto de Docker Compose, tareas-clon, para no reutilizar el volumen del ambiente original. La Figura {F("21-clon-github")} "
         "muestra el resultado.", keep=True)
@@ -526,18 +560,333 @@ parrafo("El archivo README.md del repositorio lo explica en español. En resumen
         "se copia .env.example como .env y se cambia la clave, se ejecuta docker compose up -d --build, se verifica con docker compose ps "
         "y se consultan http://localhost:8095/salud y http://localhost:8095/tareas. Para detenerlo se usa docker compose down.")
 
+# ================================================================ SEGUNDA PARTE (ENTREGA 2)
+def sig(tipo):
+    """Número que tendrá la próxima figura, tabla o listado (para citarlo antes de que aparezca)."""
+    return contador[tipo] + 1
+
+
+salto()
+titulo("Segunda parte: integración continua con Jenkins", 1)
+parrafo("El enunciado de la Entrega 2 dice que es momento de aplicar la integración continua, y que para ello se implementa Jenkins como "
+        "gestor de operaciones, acompañado de un documento con las características requeridas para su implementación (Politécnico "
+        "Grancolombiano, s. f.). El tutor precisó el alcance: saber qué hace la herramienta, qué características tiene y cómo se implementa "
+        "en el proyecto que se viene desarrollando, explorándola e instalándola, y explicar el paso a paso para demostrar que se entiende, no "
+        "solo pegar capturas (Reyes Corredor, 2026). Esta parte responde a esos tres puntos sobre la misma API de tareas de la primera parte.")
+
+titulo("Qué es Jenkins y qué papel cumple en el proyecto", 2)
+parrafo("Jenkins es un servidor de automatización de código abierto. Su sitio oficial lo describe como un programa autónomo escrito en Java que "
+        "puede funcionar como un servidor de integración continua sencillo o convertirse en el centro de entrega continua de un proyecto, y que "
+        "se configura desde una interfaz web (Jenkins, s. f.-c). Sobre esa base, Jenkins Pipeline es un conjunto de plugins que permite definir "
+        "todo el proceso de integración y entrega como código, en un archivo de texto llamado Jenkinsfile que se guarda en el control de "
+        "versiones junto con la aplicación (Jenkins, s. f.-d).")
+parrafo("En este proyecto Jenkins cumple el papel de gestor de operaciones que pide el enunciado: cada vez que alguien del equipo integra un "
+        "cambio en la rama del proyecto, Jenkins lo descarga y ejecuta, sin intervención de nadie, la misma secuencia de verificación: "
+        "pruebas unitarias, construcción de la imagen de la API, arranque de los dos contenedores, consulta del endpoint /salud y pruebas de "
+        "integración contra la base de datos real. Es el ciclo de código, commit, construcción y despliegue que el tutor asoció con la cultura "
+        "DevOps (Reyes Corredor, 2026). Si alguna etapa falla, la integración se detiene y el equipo sabe exactamente dónde está el problema.")
+
+titulo("Características de Jenkins", 2)
+parrafo(f"El tutor resumió las características de Jenkins en el encuentro del escenario 4: es gratuito, sirve para integración y despliegue "
+        f"continuos, trabaja sobre la línea de código, commit, construcción y despliegue, cuenta con más de 1000 plugins, guarda el historial de los "
+        f"cambios y se integra con herramientas como Docker y con la nube (Reyes Corredor, 2026). La Tabla {sig('tab')} contrasta esas características "
+        f"con la documentación oficial y explica cómo se aprovechó cada una en el proyecto.", keep=True)
+tabla("Características de Jenkins y su uso en el proyecto", ["Característica", "Qué significa", "Cómo se aprovecha en el proyecto"], [
+    ["Integración y entrega continuas", "Puede funcionar como servidor de integración continua o como centro de entrega continua (Jenkins, s. f.-c).",
+     "Ejecuta el pipeline del proyecto cada vez que cambia la rama de trabajo."],
+    ["Instalación sencilla", "Es un programa Java autónomo, con paquetes para Windows, Linux y macOS (Jenkins, s. f.-c) y una imagen oficial de Docker (Jenkins, s. f.-a).",
+     "Se instaló como contenedor, sin instalar Java en el equipo."],
+    ["Configuración por interfaz web", "Se configura desde el navegador, con verificación de errores y ayuda en línea (Jenkins, s. f.-c).",
+     "El asistente inicial, la credencial y los trabajos se configuraron desde la interfaz."],
+    ["Plugins", "El sitio oficial reporta más de 2300 plugins aportados por la comunidad (Jenkins, s. f.-c).",
+     "Se usan Pipeline, Git, Docker Pipeline, Credentials Binding, Timestamper y Pipeline Graph View."],
+    ["Pipeline como código", "El pipeline se escribe en un Jenkinsfile que se versiona con el código (Jenkins, s. f.-d).",
+     "El Jenkinsfile vive en la raíz del repositorio; cualquier cambio al proceso queda en el historial de Git."],
+    ["Integración con Docker", "Puede usar imágenes de Docker como entorno de ejecución de una etapa o de todo el pipeline (Jenkins, s. f.-g).",
+     "Las pruebas unitarias corren en un contenedor node:22-alpine y el pipeline levanta los dos contenedores del proyecto."],
+    ["Disparadores", "Puede revisar el repositorio con una frecuencia definida (pollSCM) y ejecutar el pipeline si encuentra cambios (Jenkins, s. f.-e).",
+     "Revisa la rama cada dos minutos."],
+    ["Credenciales", "Guarda las credenciales de forma cifrada en el controlador (Jenkins, s. f.-f).",
+     "La clave de PostgreSQL del pipeline no está en el repositorio."],
+    ["Historial y trabajo distribuido", "Conserva el historial de cada ejecución y puede repartir el trabajo entre varias máquinas (Jenkins, s. f.-c).",
+     "El historial muestra las ejecuciones en verde y en rojo. El trabajo distribuido no se usa: un solo nodo basta para este proyecto."],
+], [1.4, 2.6, 2.5])
+
+titulo("Requisitos para implementar Jenkins en el proyecto", 2)
+parrafo(f"El enunciado pide documentar las características requeridas para implementar Jenkins (Politécnico Grancolombiano, s. f.). La Tabla "
+        f"{sig('tab')} reúne lo que fue necesario en este proyecto, con el valor que se usó y el motivo.", keep=True)
+tabla("Requisitos de la implementación de Jenkins", ["Requisito", "Qué se usó", "Motivo o fuente"], [
+    ["Java", "Java 21, incluido en la imagen oficial jenkins/jenkins:2.580.2-jdk21",
+     "La guía oficial de instalación pide Java 21 o superior (Jenkins, s. f.-a); el tutor mostró la instalación en Windows con JDK 21 o 25 (Reyes Corredor, 2026)."],
+    ["Motor de contenedores", "Docker Desktop con contenedores Linux",
+     "Es el requisito de la instalación con Docker en Windows (Jenkins, s. f.-a) y ya se usaba en la primera parte."],
+    ["Puertos", "8181 del equipo para la interfaz web (8080 dentro del contenedor) y 50000 para agentes",
+     "El puerto 8080 del equipo ya lo usaba otra aplicación."],
+    ["Almacenamiento persistente", "Volumen jenkins-data montado en /var/jenkins_home",
+     "Conserva la configuración, los trabajos y el historial aunque se recree el contenedor (Jenkins, s. f.-a)."],
+    ["Acceso a Docker desde Jenkins", "Contenedor docker:dind y cliente de Docker con el plugin de Docker Compose",
+     "El pipeline construye la imagen de la API y levanta los dos contenedores."],
+    ["Acceso al código", "Repositorio Git del proyecto",
+     "En esta entrega Jenkins lee una copia local de la rama de trabajo; un segundo trabajo descarga la rama main desde GitHub."],
+    ["Plugins", "Pipeline, Git, Docker Pipeline, Credentials Binding, Timestamper y Pipeline Graph View",
+     f"Ver la Tabla {sig('tab') + 1}."],
+    ["Usuario administrador", "admin-ci, creado en el asistente inicial", "Su clave no se publica en el documento ni en el repositorio."],
+    ["Credencial", "tareas-db-password, de tipo Secret text", "Es la clave de la base de datos que usa el pipeline."],
+    ["Recursos", "Medidos en reposo, después de las ejecuciones: 1,234 GiB de memoria para el contenedor jenkins y 57,84 MiB para jenkins-docker; la imagen propia de Jenkins ocupa 1,06 GB en disco",
+     "Lectura de docker stats y docker image ls en el equipo del proyecto."],
+], [1.4, 2.4, 2.7])
+
+titulo("Instalación de Jenkins con Docker", 2)
+titulo("Por qué con Docker", 3)
+parrafo("El material de apoyo del tutor muestra la instalación de Jenkins en Windows como un servicio, con el instalador del sistema, un JDK, la "
+        "prueba del puerto 8080, la excepción del firewall y el desbloqueo inicial (Reyes Corredor, 2026). El grupo optó por la instalación con "
+        "Docker que documenta el sitio oficial de Jenkins (Jenkins, s. f.-a), por tres razones: da continuidad a la primera parte, en la que todo "
+        "el proyecto ya corre en contenedores; no exige instalar Java en el equipo; y deja la instalación escrita en archivos del repositorio, de "
+        "modo que cualquier integrante la reproduce con un solo comando. El tutor también destacó la integración con Docker como una de las más "
+        "valiosas, porque facilita el manejo de contenedores y ambientes (Reyes Corredor, 2026).")
+parrafo(f"La guía oficial usa dos contenedores, como muestra la Figura {sig('fig')}. El contenedor jenkins ejecuta Jenkins. El contenedor "
+        "jenkins-docker ejecuta la imagen docker:dind, que es un motor de Docker completo dentro de un contenedor; Jenkins le envía los comandos "
+        "de Docker por la red jenkins, en el puerto 2376 y con certificados TLS. Los dos comparten el volumen jenkins-data, así que las rutas del "
+        "espacio de trabajo existen para ambos: cuando el pipeline ejecuta docker compose, el motor encuentra los mismos archivos que descargó "
+        "Jenkins, por ejemplo db/init.sql.")
+figura("diagrama-jenkins.png", "Arquitectura de Jenkins con Docker en el proyecto",
+       "El navegador entra a Jenkins por el puerto 8181 del equipo. Jenkins descarga el código del repositorio Git y le pide al motor docker:dind "
+       "que ejecute cada etapa: un contenedor temporal de Node.js para las pruebas unitarias y, después, los dos contenedores del proyecto, "
+       "tareas-app y tareas-db, con su red y su volumen. Jenkins consulta /salud a través del nombre docker, que es el alias del motor en la red "
+       "jenkins. Al final de cada ejecución el pipeline borra los contenedores y el volumen, de modo que la siguiente empieza con la base de datos limpia.")
+titulo("La imagen de Jenkins del proyecto", 3)
+parrafo(f"El Listado {sig('lis')} es el Dockerfile de la imagen de Jenkins. Parte de la receta oficial (Jenkins, s. f.-a): la imagen "
+        "jenkins/jenkins:2.580.2-jdk21, el repositorio de paquetes de Docker, el cliente docker-ce-cli y los plugins docker-workflow y "
+        "json-path-api.", keep=True)
+listado("Dockerfile de la imagen de Jenkins", r"jenkins\Dockerfile")
+parrafo("A la receta oficial se le agregaron dos líneas. La primera instala docker-compose-plugin, porque el pipeline levanta los dos "
+        "contenedores del proyecto con docker compose, igual que en la primera parte. La segunda marca como seguro cualquier repositorio para "
+        "Git, porque el repositorio que Jenkins lee en esta entrega se monta desde el equipo anfitrión y pertenece a otro usuario; sin esa línea, "
+        "Git se niega a leerlo.")
+titulo("El script de instalación", 3)
+parrafo(f"El Listado {sig('lis')} es el script que levanta todo. Sigue los pasos de la guía oficial para Windows: crea la red jenkins, inicia "
+        "el contenedor docker:dind, construye la imagen y crea el contenedor de Jenkins con las variables que le indican dónde está el motor de "
+        "Docker (Jenkins, s. f.-a).", keep=True)
+listado("Script jenkins/levantar.ps1", r"jenkins\levantar.ps1")
+parrafo("Frente a la guía oficial hay tres ajustes, todos comentados en el script: la interfaz se publica en el puerto 8181 porque el 8080 "
+        "del equipo estaba ocupado; se monta en /repos, solo para lectura, una copia local del repositorio; y se activa la propiedad "
+        "ALLOW_LOCAL_CHECKOUT del plugin Git para que Jenkins pueda leer esa copia, por las razones que se explican en la sección sobre la "
+        "conexión con el repositorio.")
+parrafo(f"La Figura {sig('fig')} muestra el resultado del script: la red, la imagen construida y los dos contenedores en ejecución.", keep=True)
+figura("j01-levantar.png", "Red, imagen y contenedores de Jenkins",
+       "La red jenkins es de tipo bridge. La imagen tareas-jenkins:2.580.2-1 es la que construyó el script a partir del Dockerfile. Los dos "
+       "contenedores están en ejecución: jenkins publica la interfaz web en el puerto 8181 del equipo y el puerto 50000 para agentes, y "
+       "jenkins-docker publica el puerto 2376 del motor de Docker.")
+figura("j09-cliente-docker.png", "Jenkins se comunica con su motor de Docker",
+       "Los comandos se ejecutan dentro del contenedor jenkins. El cliente de Docker de Jenkins responde con su versión y con la del motor al que "
+       "está conectado, que es Linux; también están disponibles Docker Compose y Git. La variable DOCKER_HOST confirma que el motor es el "
+       "contenedor docker:dind, al que Jenkins llama docker en el puerto 2376.")
+
+titulo("Configuración inicial", 2)
+parrafo("La primera vez que se abre Jenkins aparece un asistente de cuatro pasos. Se recorrió completo desde el navegador, en http://localhost:8181.")
+parrafo(f"**Paso 1, desbloqueo.** Jenkins genera una clave de administrador de un solo uso y pide escribirla para continuar (Figura {sig('fig')}). "
+        "La clave está en el archivo /var/jenkins_home/secrets/initialAdminPassword del contenedor y también aparece en su registro (Jenkins, "
+        "s. f.-a); se leyó con docker exec. Así se garantiza que solo quien tiene acceso al servidor puede terminar la instalación.", keep=True)
+figura("j02-desbloqueo.png", "Pantalla de desbloqueo de Jenkins",
+       "Jenkins indica la ruta del archivo con la clave inicial y pide pegarla en el campo Administrator password. Mientras no se desbloquee, "
+       "nadie puede usar la instalación.")
+parrafo(f"**Paso 2, plugins.** Jenkins ofrece instalar los plugins sugeridos o elegirlos uno por uno (Figura {sig('fig')}). Se eligió la opción "
+        "sugerida, porque incluye los que el proyecto necesita: Pipeline, Git, Credentials Binding y Timestamper, entre otros. El plugin de Docker "
+        "Pipeline ya venía en la imagen propia.", keep=True)
+figura("j03-personalizar.png", "Elección de los plugins iniciales",
+       "La opción Install suggested plugins instala el conjunto que la comunidad recomienda para la mayoría de los casos. La otra opción, "
+       "Select plugins to install, permite elegirlos; los plugins también se pueden agregar después desde Manage Jenkins.")
+figura("j04-instalando-plugins.png", "Instalación de los plugins sugeridos",
+       "Cada recuadro es un plugin; los verdes ya se instalaron y los demás están en cola. A la derecha, Jenkins lista lo que va instalando, "
+       "incluidas las dependencias, marcadas con dos asteriscos. Según el registro del contenedor, la instalación terminó con 43 plugins en 52 segundos.")
+parrafo(f"**Paso 3, primer administrador.** Se creó el usuario admin-ci (Figura {sig('fig')}), con el que se hizo todo lo demás. La clave se "
+        "guardó en un archivo local fuera del repositorio.", keep=True)
+figura("j05-primer-administrador.png", "Creación del primer usuario administrador",
+       "El formulario pide usuario, clave, nombre y correo. Los campos de clave aparecen enmascarados. El correo es ficticio, porque esta "
+       "instalación no envía notificaciones.")
+parrafo(f"**Paso 4, dirección y arranque.** Se confirmó http://localhost:8181/ como dirección de la instancia y Jenkins quedó listo. La Figura "
+        f"{sig('fig')} muestra el tablero inicial, todavía sin trabajos.", keep=True)
+figura("j08-tablero-inicial.png", "Tablero inicial de Jenkins",
+       "El tablero ofrece crear el primer trabajo (Create a job o New Item) y configurar agentes o nubes para repartir el trabajo. A la izquierda "
+       "están la cola de ejecuciones y el estado de los ejecutores: dos, ambos libres. Abajo a la derecha se lee la versión instalada, 2.580.2.")
+
+titulo("Plugins utilizados", 2)
+parrafo(f"Después del asistente, Jenkins quedó con 95 plugins activos, contando dependencias, según su API de administración. La Tabla "
+        f"{sig('tab')} lista los que usa el pipeline del proyecto y para qué.", keep=True)
+tabla("Plugins que usa el pipeline", ["Plugin", "Versión", "Para qué se usa"], [
+    ["Pipeline", "608.v67378e9d3db_1", "Permite definir el proceso en un Jenkinsfile con sintaxis declarativa (Jenkins, s. f.-d)."],
+    ["Git", "5.11.0", "Descarga el código del repositorio y revisa si hay commits nuevos (Jenkins, s. f.-b)."],
+    ["Docker Pipeline", "653.v2f2c08eff0ec", "Habilita agent { docker } para correr una etapa dentro de un contenedor (Jenkins, s. f.-g)."],
+    ["Credentials Binding", "728.v902a_273b_8947", "Entrega la clave de la base de datos al pipeline con withCredentials, sin escribirla en el código."],
+    ["Timestamper", "1.30", "Agrega la hora a cada línea de la consola, lo que ayuda a ver cuánto tarda cada paso."],
+    ["Pipeline Graph View", "1053.v9df19e6ceed2", "Dibuja las etapas de cada ejecución y su estado."],
+], [1.6, 1.6, 3.3])
+
+titulo("Credencial de la base de datos", 2)
+parrafo(f"El pipeline levanta una base de datos PostgreSQL y necesita su clave. Para no escribirla en el repositorio, se guardó en Jenkins como una "
+        "credencial de tipo Secret text, con alcance global e identificador tareas-db-password. Jenkins guarda las credenciales cifradas en el "
+        f"controlador (Jenkins, s. f.-f). La Figura {sig('fig')} muestra la credencial registrada: se ven su identificador y su descripción, nunca su valor.")
+figura("j10-credencial.png", "Credencial tareas-db-password en Jenkins",
+       "La credencial aparece en el almacén System con dominio Global. Durante cada ejecución, el pipeline la recibe en una variable con "
+       "withCredentials, escribe el archivo .env que necesita Docker Compose y lo borra al terminar.")
+
+titulo("El pipeline del proyecto: archivo Jenkinsfile", 2)
+parrafo("El pipeline se escribió con la sintaxis declarativa, pensada para que el código del pipeline sea fácil de escribir y de leer (Jenkins, "
+        "s. f.-d). En ella, un bloque stage agrupa un conjunto de tareas con un propósito, como construir o probar, y cada step es una tarea "
+        f"puntual, como ejecutar un comando con sh (Jenkins, s. f.-d). El Listado {sig('lis')} contiene el archivo completo.")
+listado("Archivo Jenkinsfile del proyecto", "Jenkinsfile")
+parrafo("Las secciones del archivo cumplen funciones distintas (Jenkins, s. f.-e). **agent any** indica que el pipeline puede correr en "
+        "cualquier ejecutor disponible. **options** fija reglas de la ejecución: la hora en cada línea de la consola, que no corran dos "
+        "ejecuciones a la vez, que se conserven las últimas treinta y un tiempo límite de quince minutos, después del cual Jenkins aborta la "
+        "ejecución. **triggers** con pollSCM('H/2 * * * *') le pide a Jenkins revisar el repositorio cada dos minutos y ejecutar el pipeline si "
+        "encuentra commits nuevos; la letra H reparte las revisiones en el tiempo según el nombre del trabajo, para que no coincidan todas en el "
+        "mismo minuto. **environment** define el nombre del proyecto de Docker Compose y el puerto de la API. **post** define lo que se hace al "
+        "final: always se ejecuta siempre, sin importar el resultado, mientras que success y failure solo cuando la ejecución termina bien o mal.")
+parrafo(f"La Tabla {sig('tab')} explica cada etapa y qué comprueba.", keep=True)
+tabla("Etapas del pipeline", ["Etapa", "Qué hace", "Qué comprueba"], [
+    ["Descargar código", "Descarga la rama configurada en el trabajo e imprime el commit que se va a probar.", "Que Jenkins accede al repositorio y sabe qué versión prueba."],
+    ["Instalar dependencias y pruebas unitarias", "Dentro de un contenedor node:22-alpine ejecuta npm ci y npm test, con un tiempo límite de tres minutos.",
+     "La validación de entradas y los códigos HTTP de la API, sin base de datos."],
+    ["Construir la imagen de la API", "Ejecuta docker compose build app con el Dockerfile de la primera parte.", "Que la imagen se construye desde el repositorio."],
+    ["Levantar los dos contenedores", "Escribe el .env con la credencial y ejecuta docker compose up -d --wait, que espera a que los servicios estén listos.",
+     "Que los dos contenedores arrancan y la base de datos queda saludable."],
+    ["Verificar /salud", "Consulta http://docker:8095/salud con curl; si la respuesta no es exitosa, la etapa falla.", "Que la API responde y llega a la base de datos."],
+    ["Pruebas de integración", "Ejecuta npm test dentro del contenedor de la API, donde existe DB_HOST.", "El ciclo completo de crear, leer, actualizar y borrar contra la base real."],
+    ["Acciones finales (post)", "Ejecuta docker compose down -v y borra el .env, pase lo que pase.", "Que no quedan contenedores, volúmenes ni claves de una ejecución a otra."],
+], [1.6, 2.7, 2.2])
+parrafo("Node.js no está instalado en Jenkins. La segunda etapa usa agent { docker { image 'node:22-alpine' } }, que corre esa etapa dentro de un "
+        "contenedor de esa imagen; la opción reuseNode true mantiene el mismo espacio de trabajo de las demás etapas, así que el contenedor ve el "
+        "código ya descargado (Jenkins, s. f.-g). Esa es la primera forma en que Jenkins se integra con Docker en este proyecto; la segunda es que el "
+        "propio pipeline construye y levanta los contenedores de la aplicación.")
+
+titulo("Creación del trabajo y conexión con el repositorio", 2)
+parrafo("En Jenkins, un trabajo de tipo Pipeline es el que ejecuta un Jenkinsfile. Se creó desde la interfaz con estos pasos: New Item, nombre "
+        "tareas-equipo, tipo Pipeline y OK; luego, en la sección Pipeline de la configuración, Definition en Pipeline script from SCM, SCM en Git, "
+        "la dirección del repositorio, la rama que se debe construir y la ruta del Jenkinsfile, que se dejó en su valor por defecto, Jenkinsfile. "
+        f"Las Figuras {sig('fig')} y {sig('fig') + 1} muestran esa configuración.", keep=True)
+figura("j12-configuracion-scm.png", "Configuración del trabajo: el pipeline se lee del repositorio",
+       "Con Pipeline script from SCM, Jenkins no guarda el pipeline: lo lee del Jenkinsfile del repositorio en cada ejecución. El SCM es Git y la "
+       "dirección es file:///repos/poli-ic-proyecto1.git, la copia local del repositorio montada en el contenedor. No se necesitan credenciales "
+       "para leerla.")
+figura("j12b-ruta-jenkinsfile.png", "Rama que construye el trabajo",
+       "En Branch Specifier se indicó */poli-trabajos/ic-proyecto2-jenkins, la rama donde se desarrolló esta entrega. Jenkins solo construye "
+       "esa rama y solo vigila sus cambios.")
+parrafo("La dirección del repositorio merece una explicación. La rama de esta entrega, que contiene el Jenkinsfile, todavía no estaba publicada "
+        "en GitHub cuando se tomaron las capturas. Por eso Jenkins lee una copia local de esa rama, montada solo para lectura. Por seguridad, el "
+        "plugin Git de las versiones actuales no permite leer repositorios locales, según la alerta SECURITY-2478; la documentación del plugin "
+        "indica que el administrador puede permitirlo, si acepta el riesgo, con la propiedad hudson.plugins.git.GitSCM.ALLOW_LOCAL_CHECKOUT=true "
+        "al arrancar Jenkins (Jenkins, s. f.-b). Se aceptó porque la instalación es local, la copia es de solo lectura y la medida es temporal: al "
+        "publicar la rama, basta con cambiar la dirección por https://github.com/Owito/poli-ic-proyecto1.git, sin tocar nada más. La sección "
+        "sobre la integración con GitHub muestra que esa conexión ya funciona.")
+
+titulo("Ejecuciones del pipeline", 2)
+parrafo(f"La Tabla {sig('tab')} resume las ejecuciones del trabajo tareas-equipo. La primera se lanzó a mano con la API de Jenkins, lo que "
+        "equivale al botón Build Now; las demás las lanzó Jenkins solo, al encontrar commits nuevos en la rama. Los datos salen de la consola y "
+        "de la API de cada ejecución.", keep=True)
+tabla("Ejecuciones del trabajo tareas-equipo", ["N.º", "Cómo se inició", "Commit probado", "Resultado", "Duración", "Qué mostró"], [
+    ["1", "A mano", "35489a5, el Jenkinsfile", "SUCCESS", "1 min 5 s", "El pipeline completo funciona; la primera vez descarga la imagen de Node.js."],
+    ["2", "Cambio en el repositorio", "d06d969, error introducido a propósito", "ABORTED", "7 min 6 s", "La prueba falló, pero la ejecución no terminaba; se abortó a mano."],
+    ["3", "Cambio en el repositorio", "25bcac6, pruebas y tiempo límite corregidos", "FAILURE", "7,8 s", "El error sigue y el pipeline se detiene en las pruebas unitarias."],
+    ["4", "Cambio en el repositorio", "53d6fe3, revierte el error", "SUCCESS", "19 s", "Todo en verde otra vez."],
+], [0.4, 1.0, 1.5, 0.9, 0.8, 1.9])
+titulo("Una ejecución completa en verde", 3)
+parrafo(f"La Figura {sig('fig')} muestra las etapas de la ejecución 4 y la Figura {sig('fig') + 1} las líneas clave de su consola.", keep=True)
+figura("j15-etapas-verde.png", "Etapas de la ejecución 4 en verde",
+       "Arriba se lee que la ejecución la inició un cambio en el repositorio (Started by an SCM change) y que tardó 19 segundos. El grafo "
+       "muestra las seis etapas del Jenkinsfile, más la descarga inicial del Jenkinsfile (Checkout SCM) y las acciones finales, todas en verde. "
+       "A la izquierda se ve cuánto tardó cada etapa; por ejemplo, levantar los dos contenedores tomó 7 segundos.")
+figura("j21-consola-verde.png", "Consola de la ejecución 4",
+       "Se ven el commit probado, la versión de Node.js del contenedor de pruebas, las cinco pruebas unitarias (cuatro aprobadas y la de "
+       "integración omitida, porque en ese contenedor no hay base de datos), la imagen construida, los dos contenedores en ejecución con "
+       "tareas-db saludable, la respuesta de /salud con la versión de PostgreSQL leída de la base y las pruebas de integración, que esta vez sí "
+       "corren y pasan. La última línea es Finished: SUCCESS.")
+titulo("Ejecución automática ante un cambio", 3)
+parrafo("Para comprobar el disparador, se hizo un commit en la rama y se subió a la copia del repositorio que lee Jenkins (Figura "
+        f"{sig('fig')}). Sin que nadie entrara a Jenkins, en la siguiente revisión del repositorio apareció la ejecución 2, iniciada por el cambio.", keep=True)
+figura("j13-espejo.png", "Envío de un commit a la rama que vigila Jenkins",
+       "git push envía el commit d06d969 a la copia local del repositorio; git ls-remote confirma que la rama apunta a ese commit. Desde ese "
+       "momento, la próxima revisión de pollSCM encuentra un commit que no se ha construido y lanza el pipeline.")
+titulo("El pipeline detiene la integración cuando una prueba falla", 3)
+parrafo("El commit d06d969 se hizo a propósito para comprobar que Jenkins detecta errores: cambia la API para que una tarea sin título reciba un "
+        "título por defecto, lo que rompe la regla de negocio de que el título es obligatorio. La prueba unitaria POST /tareas sin titulo espera "
+        "la respuesta HTTP 400 y, con el cambio, recibió 500.")
+parrafo("En la ejecución 2, Jenkins detectó el fallo, pero la ejecución no terminó: la prueba fallida dejaba abierto el servidor de prueba, porque "
+        "la instrucción que lo cerraba estaba después de la aserción y nunca se ejecutaba, y Node.js se quedaba esperando. Tras siete minutos se "
+        "abortó a mano. El hallazgo llevó a dos correcciones en el commit 25bcac6: las pruebas cierran el servidor con t.after(), que se ejecuta "
+        "aunque la prueba falle, y el Jenkinsfile tiene ahora un tiempo límite general de quince minutos y uno de tres minutos para las pruebas "
+        f"unitarias. Con eso, la ejecución 3 terminó en rojo en 7,8 segundos (Figuras {sig('fig')} y {sig('fig') + 1}).")
+figura("j17-etapas-rojo.png", "Etapas de la ejecución 3: falla en las pruebas unitarias",
+       "La etapa de dependencias y pruebas unitarias está en rojo. Las cuatro siguientes aparecen saltadas: Jenkins no construyó la imagen ni "
+       "levantó los contenedores, porque no tiene sentido desplegar código que no pasa sus pruebas. Las acciones finales sí se ejecutaron. A la "
+       "derecha, el resumen de npm test: cinco pruebas, tres aprobadas, una fallida y una omitida, y el código de salida 1 que marca la falla.")
+figura("j22-consola-rojo.png", "Consola de la ejecución 3",
+       "La prueba 1 reporta not ok, con el valor esperado, 400, y el obtenido, 500. Después, cada etapa siguiente aparece como skipped due to "
+       "earlier failure(s), se imprime el mensaje de falla definido en post y la ejecución termina con Finished: FAILURE.")
+parrafo(f"Finalmente se revirtió el commit con el error (commit 53d6fe3) y la ejecución 4 volvió a quedar en verde. La Figura {sig('fig')} "
+        "muestra las cuatro ejecuciones, etapa por etapa.", keep=True)
+figura("j20-etapas-historial.png", "Historial de ejecuciones por etapa",
+       "Cada fila es una ejecución y cada círculo una etapa: el primero es la descarga del Jenkinsfile, siguen las seis etapas en el orden del "
+       "Jenkinsfile y el último son las acciones finales. La 1 y la 4 están completas en verde. La 3 falla en el tercer círculo, la etapa de "
+       "pruebas unitarias, y salta las siguientes. La 2 quedó abortada en esa misma etapa. Es la clase de historial que "
+       "el tutor mostró en el encuentro como una de las ventajas de Jenkins (Reyes Corredor, 2026).")
+
+titulo("Integración con GitHub", 2)
+parrafo("Para comprobar que Jenkins se conecta con el repositorio público de GitHub, se creó un segundo trabajo, tareas-equipo-github. Como la "
+        "rama main de GitHub todavía no tiene Jenkinsfile, su pipeline se escribió en el propio trabajo, con la opción Pipeline script; el mismo "
+        f"script está versionado en el archivo jenkins/tareas-equipo-github.groovy. La Figura {sig('fig')} muestra la creación del trabajo.")
+figura("j11-nuevo-trabajo.png", "Creación de un trabajo de tipo Pipeline",
+       "En New Item se escribe el nombre del trabajo y se elige el tipo. Pipeline es el tipo que ejecuta un pipeline como código; los otros, como "
+       "Freestyle project o Multibranch Pipeline, sirven para casos distintos. El trabajo tareas-equipo se creó de la misma forma.")
+figura("j16-script-github.png", "Script del trabajo tareas-equipo-github",
+       "Con Definition en Pipeline script, el pipeline se escribe en el editor del trabajo. La etapa Descargar desde GitHub usa el paso git con la "
+       "dirección https://github.com/Owito/poli-ic-proyecto1.git y la rama main. Como el repositorio es público, no hace falta credencial.")
+figura("j18-github-ejecucion.png", "Ejecución del trabajo tareas-equipo-github",
+       "Las dos etapas, Descargar desde GitHub y Pruebas unitarias, terminaron en verde. A la derecha se ve el resumen de npm test con cuatro "
+       "pruebas aprobadas, ninguna fallida y una omitida.")
+figura("j23-consola-github.png", "Consola del trabajo tareas-equipo-github",
+       "Jenkins clona el repositorio desde GitHub y prueba el commit 190bf46, que es el último de la rama main. Es la evidencia de que la conexión "
+       "con GitHub funciona: cuando la rama de esta entrega se publique, el trabajo tareas-equipo solo necesita cambiar la dirección del repositorio.")
+
+titulo("Dificultades y cómo se resolvieron", 2)
+parrafo("**El puerto 8080 estaba ocupado.** Es el puerto por defecto de Jenkins, pero en el equipo del proyecto lo usaba otra aplicación. Se "
+        "publicó la interfaz en el 8181, que es un parámetro del script de instalación.")
+parrafo("**La rama no estaba en GitHub.** Jenkins necesitaba leer el Jenkinsfile antes de publicar la rama. Se resolvió con la copia local de "
+        "solo lectura y la propiedad del plugin Git que lo permite, como medida temporal, y se comprobó la conexión con GitHub con un segundo trabajo.")
+parrafo("**Una prueba fallida dejaba la ejecución esperando.** Fue la dificultad más útil, porque la descubrió el propio Jenkins: sin un tiempo "
+        "límite, una prueba que no termina bloquea la integración indefinidamente. Se corrigieron las pruebas para que siempre cierren el servidor "
+        "y se agregaron tiempos límite al pipeline.")
+
+titulo("Cómo reproducir la segunda parte", 2)
+parrafo("Con Docker Desktop en ejecución, se crea una copia local del repositorio con git clone --bare y se ejecuta powershell -File "
+        "jenkins\\levantar.ps1 -Espejo con la ruta de esa copia. Después se abre http://localhost:8181, se completa el asistente con la clave "
+        "inicial, se crea la credencial tareas-db-password y el trabajo tareas-equipo con la configuración de las Figuras "
+        f"{F('j12-configuracion-scm')} y {F('j12b-ruta-jenkinsfile')}. La primera ejecución se lanza con Build Now; desde ahí, cada commit nuevo "
+        "en la rama lanza el pipeline solo.")
+
 # ================================================================ CONCLUSIONES
 salto()
 titulo("Conclusiones", 1)
 parrafo("Se construyó una aplicación de dos contenedores, una API en Node.js y una base de datos PostgreSQL, que se ejecuta con un solo comando y que se comunica a través de una red definida por el proyecto. "
         "La comunicación se demostró con evidencia verificable: la red contiene a ambos contenedores, el nombre db se resuelve desde la API, y los datos que devuelve la API coinciden con los de la base de datos. "
         "Además, como el repositorio de GitHub guarda la definición de los contenedores y no las imágenes, cualquier integrante obtiene el mismo ambiente "
-        "a partir de una copia del repositorio y un solo comando, que es la conexión entre GitHub y Docker en la que se apoyarán las entregas siguientes.")
+        "a partir de una copia del repositorio y un solo comando, que es la conexión entre GitHub y Docker en la que se apoya la segunda parte y se apoyará la Entrega 3.")
 parrafo("El uso de healthcheck y depends_on con condición evita un error común de arranque, en el que la aplicación intenta conectarse antes de que la base de datos esté lista. El volumen asegura que los datos "
         "persistan, y la separación de configuración en .env permite publicar el proyecto sin exponer claves. El Dockerfile multietapa con usuario sin privilegios produce una imagen más pequeña y más segura.")
-parrafo("Las pruebas automatizadas quedaron listas para integrarse en las siguientes entregas. Como el comando npm test funciona dentro y fuera de Docker, Jenkins, Travis CI y Codeship podrán ejecutarlo sin cambios en la aplicación. "
-        "Como aprendizaje del grupo, la integración continua depende de contar primero con un entorno reproducible; Docker aporta esa base.")
-parrafo("Como limitaciones, el proyecto aún no tiene un flujo de integración continua, que corresponde a la Entrega 2, y las pruebas de integración dependen de que la base de datos esté disponible.")
+parrafo("Las pruebas automatizadas, escritas en la primera parte para que pudieran ejecutarse desde cualquier herramienta, son las que ahora ejecuta "
+        "Jenkins, sin cambios en la aplicación. Como aprendizaje del grupo, la integración continua depende de contar primero con un entorno "
+        "reproducible; Docker aporta esa base.")
+parrafo("Con Jenkins, la integración continua pasó de ser una intención a ser un proceso que se ejecuta solo: cada commit en la rama se prueba, "
+        "se construye en contenedores y se verifica de punta a punta, y el historial de ejecuciones muestra en qué etapa falló cada cambio. "
+        "Escribir el pipeline en un Jenkinsfile versionado le da al proceso de integración el mismo control de cambios que tiene el código.")
+parrafo("La prueba con un error introducido a propósito mostró el valor de la herramienta en dos niveles. Detuvo la integración antes de "
+        "construir y desplegar un cambio que rompía una regla del negocio, y además reveló un defecto en las propias pruebas, que dejaban la "
+        "ejecución esperando sin fin. La lección para el grupo es que un pipeline necesita tiempos límite y pruebas que siempre liberen sus recursos.")
+parrafo("Instalar Jenkins con Docker fue coherente con la primera parte: Jenkins, su motor de Docker y los contenedores del proyecto se levantan "
+        "a partir de archivos del repositorio. Además, Jenkins se integra con Docker en dos niveles: ejecuta etapas dentro de contenedores y "
+        "construye y levanta los contenedores de la aplicación.")
+parrafo("Como limitaciones, Jenkins corre en un equipo local que no es accesible desde internet, por lo que no puede recibir avisos de GitHub y "
+        "revisa el repositorio cada dos minutos; la rama de esta entrega se leyó de una copia local mientras no estaba publicada en GitHub; y la "
+        "instalación tiene un solo nodo. Travis CI y Codeship, que completan la integración del proyecto, corresponden a la Entrega 3.")
 # Párrafo del grupo (experiencia y distribución del trabajo): lo escribe el grupo y va aquí. Si no llega antes del
 # cierre, se omite y la sección queda completa sin él.
 
@@ -555,9 +904,18 @@ REF = [
     "GitHub. (s. f.-a). *Inviting collaborators to a personal repository*. GitHub Docs. Recuperado el 5 de noviembre de 2026, de "
     "https://docs.github.com/en/account-and-profile/setting-up-and-managing-your-personal-account-on-github/managing-access-to-your-personal-repositories/inviting-collaborators-to-a-personal-repository",
     "GitHub. (s. f.-b). *Repositories documentation*. GitHub Docs. Recuperado el 5 de noviembre de 2026, de https://docs.github.com/en/repositories",
+    "Jenkins. (s. f.-a). *Docker*. Jenkins User Documentation: Installing Jenkins. Recuperado el 17 de noviembre de 2026, de https://www.jenkins.io/doc/book/installing/docker/",
+    "Jenkins. (s. f.-b). *Git*. Jenkins Plugins. Recuperado el 17 de noviembre de 2026, de https://plugins.jenkins.io/git/",
+    "Jenkins. (s. f.-c). *Jenkins: Build great things at any scale*. Recuperado el 17 de noviembre de 2026, de https://www.jenkins.io/",
+    "Jenkins. (s. f.-d). *Pipeline*. Jenkins User Documentation. Recuperado el 17 de noviembre de 2026, de https://www.jenkins.io/doc/book/pipeline/",
+    "Jenkins. (s. f.-e). *Pipeline syntax*. Jenkins User Documentation. Recuperado el 17 de noviembre de 2026, de https://www.jenkins.io/doc/book/pipeline/syntax/",
+    "Jenkins. (s. f.-f). *Using credentials*. Jenkins User Documentation. Recuperado el 17 de noviembre de 2026, de https://www.jenkins.io/doc/book/using/using-credentials/",
+    "Jenkins. (s. f.-g). *Using Docker with Pipeline*. Jenkins User Documentation. Recuperado el 17 de noviembre de 2026, de https://www.jenkins.io/doc/book/pipeline/docker/",
     "Node.js. (s. f.). *Test runner*. Node.js v22 documentation. Recuperado el 5 de noviembre de 2026, de https://nodejs.org/docs/latest-v22.x/api/test.html",
+    "Politécnico Grancolombiano. (s. f.). *Proyecto de software basado en herramientas de integración continua* [Enunciado del proyecto del "
+    "módulo Énfasis Profesional I (Integración Continua)]. Institución Universitaria Politécnico Grancolombiano.",
     "PostgreSQL Global Development Group. (s. f.). *PostgreSQL 16 documentation*. Recuperado el 5 de noviembre de 2026, de https://www.postgresql.org/docs/16/",
-    "Reyes Corredor, E. (2026, 19 y 26 de octubre, y 5 de noviembre). *Encuentros sincrónicos de Énfasis Profesional I (Integración Continua)* [Grabaciones de clase]. Politécnico Grancolombiano.",
+    "Reyes Corredor, E. (2026, 19 y 26 de octubre, y 5 y 9 de noviembre). *Encuentros sincrónicos de Énfasis Profesional I (Integración Continua)* [Grabaciones de clase]. Politécnico Grancolombiano.",
 ]
 for r in REF:
     p = doc.add_paragraph()

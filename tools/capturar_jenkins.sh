@@ -29,9 +29,11 @@ case "$1" in
     cap j13-espejo "git push jenkins-local poli-trabajos/ic-proyecto2-jenkins; git ls-remote jenkins-local poli-trabajos/ic-proyecto2-jenkins; git log -1 --format='%h %s'"
     ;;
   consola)
-    n="$2"
-    cap "j-consola-$n" "curl -s -u <usuario>:<clave> http://localhost:8181/job/tareas-equipo/$n/consoleText | grep -E -v '^\\s*\$' | ..." \
-      "curl -s -u \"$(auth)\" http://localhost:8181/job/tareas-equipo/$n/consoleText | sed -E 's/^\\[[0-9T:.Z-]+\\] //' | grep -E '^(Started|Obtained|Checking out|Commit|\\[Pipeline\\] (stage|\\{ \\()|v?[0-9]+\\.[0-9]+\\.[0-9]+$|added|# |ok |not ok|.*Built|.*Healthy|.*Started|.*Running|NAME|tareas-|\\{\"estado|.*Removed|Integración|La integración|Finished)' | head -80"
+    # bash tools/capturar_jenkins.sh consola <trabajo> <n> <nombre_evidencia>
+    trabajo="$2"; n="$3"
+    filtro="sed -E 's/^\[[0-9T:.Z-]+\] //' | grep -E '^(Started by|Commit [0-9a-f]{7}|Cloning repository|\[Pipeline\] \{ \(|v22\.|ok [0-9]|not ok|  (expected|actual):|# (tests|pass|fail|skipped) | Image .* Built| Container tareas-(db|app) (Healthy|Started)\$|tareas-(app|db) +(tareas|postgres)|\{\"estado\"|Stage .* skipped|Integración verificada|La integración falló|ERROR|Finished)' | grep -v Declarative | awk '!vistos[\$0]++' | head -60"
+    cap "$4" "curl -s -u <usuario>:<clave> http://localhost:8181/job/$trabajo/$n/consoleText | (líneas clave)" \
+      "curl -s -u \"$(auth)\" http://localhost:8181/job/$trabajo/$n/consoleText | $filtro"
     ;;
   dind)
     cap j-dind "docker exec jenkins-docker docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}'; docker exec jenkins-docker docker image ls --format 'table {{.Repository}}\t{{.Tag}}\t{{.Size}}'"

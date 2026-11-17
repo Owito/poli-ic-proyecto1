@@ -1,0 +1,28 @@
+$ curl -s -u <usuario>:<clave> http://localhost:8181/job/tareas-equipo/4/consoleText | (líneas clave)
+Started by an SCM change
+[Pipeline] { (Descargar código)
+Commit 53d6fe3 de Carloswar: fix: el título vuelve a ser obligatorio (revierte d06d969)
+[Pipeline] { (Instalar dependencias y pruebas unitarias)
+v22.23.5
+ok 1 - POST /tareas sin titulo responde 400
+ok 2 - GET /tareas con estado inválido responde 400
+ok 3 - GET /tareas/:id inexistente responde 404
+ok 4 - GET /salud responde 503 si la BD falla
+ok 5 - integración: salud, crear, leer, actualizar y borrar una tarea # SKIP sin DB_HOST: prueba de integración omitida
+# tests 5
+# pass 4
+# fail 0
+# skipped 1
+[Pipeline] { (Construir la imagen de la API)
+ Image tareas-ci-app Built 
+[Pipeline] { (Levantar los dos contenedores)
+tareas-app   tareas-ci-app        "docker-entrypoint.s…"   app       7 seconds ago   Up Less than a second    0.0.0.0:8095->3000/tcp, [::]:8095->3000/tcp
+tareas-db    postgres:16-alpine   "docker-entrypoint.s…"   db        7 seconds ago   Up 6 seconds (healthy)   5432/tcp
+[Pipeline] { (Verificar /salud)
+{"estado":"ok","base_de_datos":"tareas","version":"PostgreSQL 16.16 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit","hora_bd":"2026-11-17T20:53:24.997Z"}
+[Pipeline] { (Pruebas de integración)
+ok 5 - integración: salud, crear, leer, actualizar y borrar una tarea
+# pass 5
+# skipped 0
+Integración verificada: pruebas, imagen, contenedores y /salud en verde.
+Finished: SUCCESS

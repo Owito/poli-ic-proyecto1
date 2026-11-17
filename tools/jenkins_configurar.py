@@ -118,6 +118,33 @@ def trabajo(ruta):
         nav.close()
 
 
+def trabajo_github(ruta):
+    """Segundo trabajo: script en línea que descarga main desde GitHub (jenkins/tareas-equipo-github.groovy)."""
+    d = datos(ruta)
+    script = (RAIZ / "jenkins" / "tareas-equipo-github.groovy").read_text(encoding="utf-8")
+    with sync_playwright() as p:
+        nav, page = entrar(p, d)
+        page.goto(URL + "/view/all/newJob", wait_until="networkidle")
+        page.fill("#name", "tareas-equipo-github")
+        page.locator("input[name=mode][value='org.jenkinsci.plugins.workflow.job.WorkflowJob']").locator("xpath=..").click()
+        page.wait_for_timeout(1500)
+        foto(page, "j11-nuevo-trabajo.png")
+        page.click("#ok-button")
+        page.wait_for_load_state("networkidle")
+        page.wait_for_selector("textarea[name=description]", timeout=20_000)
+        page.fill("textarea[name=description]", "Comprueba la conexión con GitHub: descarga main del repositorio público y corre las pruebas unitarias.")
+        editor = page.locator(".ace_editor >> visible=true").first
+        editor.scroll_into_view_if_needed()
+        page.evaluate("s => { const e = ace.edit(document.querySelector('.ace_editor')); e.setValue(s, -1); }", script)
+        page.wait_for_timeout(1000)
+        page.evaluate("window.scrollBy(0, -150)")
+        foto(page, "j16-script-github.png")
+        page.click("button[name=Submit]")
+        page.wait_for_load_state("networkidle")
+        print("trabajo guardado en", page.url)
+        nav.close()
+
+
 if __name__ == "__main__":
     EVID.mkdir(exist_ok=True)
-    {"credencial": credencial, "trabajo": trabajo}[sys.argv[1]](sys.argv[2])
+    {"credencial": credencial, "trabajo": trabajo, "github": trabajo_github}[sys.argv[1]](sys.argv[2])
