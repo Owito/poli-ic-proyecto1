@@ -39,8 +39,8 @@ function crearApp(pool) {
 
   app.post('/tareas', async (req, res, next) => {
     try {
-      const { titulo = 'Tarea sin título', responsable, estado = 'pendiente' } = req.body || {};
-      if (typeof titulo !== 'string') return res.status(400).json({ error: 'titulo inválido' });
+      const { titulo, responsable, estado = 'pendiente' } = req.body || {};
+      if (typeof titulo !== 'string' || !titulo.trim()) return res.status(400).json({ error: 'titulo es obligatorio' });
       if (!ESTADOS.includes(estado)) return res.status(400).json({ error: 'estado inválido' });
       const r = await pool.query(
         'INSERT INTO tareas (titulo, responsable, estado) VALUES ($1, $2, $3) RETURNING *',
