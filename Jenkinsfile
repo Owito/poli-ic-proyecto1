@@ -6,6 +6,8 @@ pipeline {
     options {
         timestamps()
         disableConcurrentBuilds()
+        // Si algo se queda esperando (por ejemplo, una prueba que no termina), la ejecución se corta sola.
+        timeout(time: 15, unit: 'MINUTES')
         buildDiscarder(logRotator(numToKeepStr: '30'))
     }
 
@@ -38,7 +40,9 @@ pipeline {
             steps {
                 sh 'node --version && npm --version'
                 sh 'npm ci --cache .npm-cache --no-audit --no-fund'
-                sh 'npm test'
+                timeout(time: 3, unit: 'MINUTES') {
+                    sh 'npm test'
+                }
             }
         }
 
