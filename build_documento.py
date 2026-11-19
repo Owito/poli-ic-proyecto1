@@ -1,17 +1,21 @@
-"""Genera docs/Entrega2_IC_Proyecto.docx (APA 7): el documento del proyecto con la primera parte (Docker, Entrega 1)
-y la segunda parte (Jenkins, Entrega 2), a partir de las evidencias reales.
+"""Genera docs/Entrega3_IC_Proyecto.docx (APA 7): el documento del proyecto con la primera parte (Docker, Entrega 1),
+la segunda parte (Jenkins, Entrega 2) y la tercera parte (Travis CI, Codeship y GitHub Actions, historial, solución de
+problemas, responsabilidades y opiniones, Entrega 3), a partir de las evidencias reales.
 
 Uso:
-    python tools/diagrama.py; python tools/diagrama_jenkins.py      (diagramas)
+    python tools/diagrama.py; python tools/diagrama_jenkins.py; python tools/diagrama_tres_ci.py   (diagramas)
     bash tools/capturar.sh            (evidencias de la primera parte; requiere Docker)
     bash tools/capturar_jenkins.sh ...   (evidencias de terminal de la segunda parte; ver el script)
     python tools/jenkins_capturas.py ... (capturas de la interfaz de Jenkins; requiere Playwright)
-    python build_documento.py         (arma el .docx)
-    powershell -File tools/exportar_pdf.ps1   (actualiza la tabla de contenido y exporta el PDF con Word)
+    python tools/web_capturas.py      (capturas de la documentación oficial de la tercera parte; requiere Playwright)
+    python tools/validar_ci.py ...; python tools/simular_ci.py ...   (evidencias de terminal de la tercera parte)
+    python build_documento.py         (arma el .docx; la tabla del historial sale de git log)
+    powershell -File tools/exportar_pdf.ps1 -Nombre Entrega3_IC_Proyecto   (tabla de contenido y PDF con Word)
 
-Los campos resaltados en amarillo son datos que debe confirmar el grupo.
+Los campos resaltados en amarillo, que empiezan por COMPLETAR, son datos que debe aportar el grupo.
 """
 import re
+import subprocess
 from pathlib import Path
 
 from docx import Document
@@ -24,7 +28,7 @@ from docx.shared import Inches, Pt, RGBColor
 
 RAIZ = Path(__file__).resolve().parent
 EVID = RAIZ / "evidencias"
-SALIDA = RAIZ / "docs" / "Entrega2_IC_Proyecto.docx"
+SALIDA = RAIZ / "docs" / "Entrega3_IC_Proyecto.docx"
 FUENTE = "Times New Roman"
 
 # Estado del repositorio en GitHub. El texto del documento cambia según estos dos valores, para que siempre diga lo
@@ -150,10 +154,24 @@ ORDEN = ["01-versiones", "02-estructura", "18-git-log", "19-github", "diagrama-a
          "j04-instalando-plugins", "j05-primer-administrador", "j08-tablero-inicial", "j10-credencial",
          "j12-configuracion-scm", "j12b-ruta-jenkinsfile", "j15-etapas-verde", "j21-consola-verde", "j13-espejo",
          "j17-etapas-rojo", "j22-consola-rojo", "j20-etapas-historial", "j11-nuevo-trabajo", "j16-script-github",
-         "j18-github-ejecucion", "j23-consola-github"]
+         "j18-github-ejecucion", "j23-consola-github",
+         # Tercera parte (Travis CI, Codeship y GitHub Actions)
+         "t01-travis-prueba-gratuita", "t02-codeship-fin-de-vida", "t03-codeship-cierre", "diagrama-tres-ci",
+         "t04-actions-gratis-publicos", "t05-validacion-ci", "t06-travis-local", "t07-actions-local"]
 # Evidencias de la segunda parte que son salida de terminal (las demás "j" son capturas de la interfaz de Jenkins).
 J_TERMINAL = {"j01-levantar", "j09-cliente-docker", "j13-espejo"}
 J_CONSOLA = {"j21-consola-verde", "j22-consola-rojo", "j23-consola-github"}
+# Notas propias de las figuras de la tercera parte que no son salida directa de un comando.
+WEB = "tomada el 19 de noviembre de 2026 con un navegador sin ventana; se recortó la sección citada, sin modificarla."
+EXTRACTO = ("Extracto de la salida real del comando, generada durante la elaboración de este trabajo; [...] marca las líneas "
+            "omitidas. El registro completo está en el archivo evidencias/texto/{} del repositorio.")
+NOTA_FIG = {
+    "t01-travis-prueba-gratuita": "Captura de la página oficial https://docs.travis-ci.com/user/billing-overview/, " + WEB,
+    "t02-codeship-fin-de-vida": ("Captura de la página a la que redirige https://docs.cloudbees.com/docs/cloudbees-codeship/latest/, " + WEB),
+    "t04-actions-gratis-publicos": "Captura de la página oficial https://docs.github.com/en/actions/concepts/billing-and-usage, " + WEB,
+    "t06-travis-local": EXTRACTO.format("t06-travis-local-completo.txt"),
+    "t07-actions-local": EXTRACTO.format("t07-actions-local-completo.txt"),
+}
 
 
 def F(nombre):
@@ -187,6 +205,8 @@ def figura(png, titulo_fig, explicacion, ancho=6.5):
     nombre = png[:-4]
     if png.startswith("diagrama"):
         nota = "Elaboración propia."
+    elif nombre in NOTA_FIG:
+        nota = NOTA_FIG[nombre]
     elif nombre in J_CONSOLA:
         nota = ("Extracto de la salida de consola real de la ejecución, leída con la API de Jenkins; se conservan solo "
                 "las líneas clave y se ocultan el usuario y la clave.")
@@ -242,6 +262,7 @@ def tabla(titulo_tab, encabezados, filas, anchos):
     for i, e in enumerate(encabezados):
         c = t.rows[0].cells[i]; c.text = ""
         pr = c.paragraphs[0]; pr.paragraph_format.line_spacing_rule = WD_LINE_SPACING.SINGLE
+        pr.paragraph_format.keep_with_next = True  # el encabezado no queda solo al pie de una página
         pr.add_run(e).bold = True
     for fila in filas:
         cs = t.add_row().cells
@@ -249,7 +270,12 @@ def tabla(titulo_tab, encabezados, filas, anchos):
             cs[i].text = ""
             pr = cs[i].paragraphs[0]; pr.paragraph_format.line_spacing_rule = WD_LINE_SPACING.SINGLE
             rico(pr, v)
-    for fila in t.rows:
+    for k, fila in enumerate(t.rows):
+        # Ninguna fila se parte entre dos páginas y el encabezado se repite si la tabla continúa en la página siguiente.
+        trpr = fila._tr.get_or_add_trPr()
+        trpr.append(OxmlElement("w:cantSplit"))
+        if k == 0:
+            trpr.append(OxmlElement("w:tblHeader"))
         for i, w in enumerate(anchos):
             fila.cells[i].width = Inches(w)
         for c in fila.cells:
@@ -273,8 +299,9 @@ def centrado(texto, negrita=False, resaltar=False, simple=False):
 # ================================================================ PORTADA
 for _ in range(3):
     doc.add_paragraph()
-centrado("Proyecto de software basado en herramientas de integración continua: API de tareas del equipo con Docker y Jenkins", negrita=True)
-centrado("Entrega 2, Proyecto 2, Escenario 5")
+centrado("Proyecto de software basado en herramientas de integración continua: API de tareas del equipo con Docker, Jenkins, "
+         "Travis CI y GitHub Actions", negrita=True)
+centrado("Entrega 3 y sustentación, escenarios 7 y 8")
 doc.add_paragraph()
 centrado("Leonardo Espinosa Rivera")
 centrado("Daniel Santiago Estupiñán Cruz")
@@ -288,7 +315,7 @@ centrado("Politécnico Grancolombiano")
 centrado("TIC 42711: Integración Continua, grupo B04")
 centrado("Grupo de trabajo colaborativo 14")
 centrado("Tutor: Edward Reyes Corredor")
-centrado("Noviembre de 2026")
+centrado("Diciembre de 2026")
 
 # ================================================================ TABLA DE CONTENIDO
 # Título con formato directo (no Heading 1) para que el campo TOC no lo liste; el salto de página va en el propio
@@ -311,7 +338,7 @@ parrafo("La integración continua es una práctica del desarrollo de software en
 parrafo("A diferencia de una máquina virtual, que instala un sistema operativo completo sobre un hipervisor, Docker aprovecha el núcleo del sistema "
         "operativo del equipo anfitrión y empaqueta solo la aplicación con sus librerías, su configuración y sus dependencias, lo que permite que funcione "
         "igual en cualquier computador (Reyes Corredor, 2026).")
-parrafo("Este documento reúne las dos primeras entregas del proyecto del módulo. Como indicó el tutor, cada entrega se agrega como una "
+parrafo("Este documento reúne las tres entregas del proyecto del módulo. Como indicó el tutor, cada entrega se agrega como una "
         "parte nueva del mismo documento, de modo que al final todo el proyecto quede en uno solo (Reyes Corredor, 2026). La primera "
         "parte corresponde a la Entrega 1: el enunciado indica que el proyecto se crea en un repositorio de GitHub y que, con Docker, se "
         "construyen dos contenedores comunicados entre sí (Politécnico Grancolombiano, s. f.). Para cumplirlo se desarrolló una API REST de "
@@ -323,12 +350,18 @@ parrafo("La segunda parte corresponde a la Entrega 2. El enunciado pide aplicar 
         "s. f.). Jenkins se instaló con Docker, se configuró desde su interfaz web y se conectó con el repositorio mediante un pipeline "
         "escrito en un archivo Jenkinsfile que, ante cada cambio, ejecuta las pruebas, construye la imagen de la API, levanta los dos "
         "contenedores y verifica que la API responda. El repositorio del proyecto está disponible en https://github.com/Owito/poli-ic-proyecto1.")
-parrafo("Cada captura de pantalla del documento es la salida real de un comando o una vista real de la interfaz de Jenkins, obtenida durante "
-        "la elaboración del trabajo, y va acompañada de una explicación de lo que muestra y de por qué importa para el proyecto.")
+parrafo("La tercera parte corresponde a la Entrega 3. El enunciado pide que la plataforma quede totalmente integrada con contenedores, "
+        "Jenkins, Travis CI y Codeship, y que el documento consolide el historial de cambios, las sugerencias para la solución de "
+        "problemas y las responsabilidades y opiniones (Politécnico Grancolombiano, s. f.). Se agregaron las configuraciones de Travis CI "
+        "y de GitHub Actions, que ejecutan las mismas etapas que Jenkins; GitHub Actions reemplaza a Codeship, que CloudBees retiró en "
+        "enero de 2026, como se explica y se evidencia en esa parte.")
+parrafo("Cada captura de pantalla del documento es la salida real de un comando, una vista real de la interfaz de Jenkins o una página "
+        "oficial de documentación, obtenida durante la elaboración del trabajo, y va acompañada de una explicación de lo que muestra y de "
+        "por qué importa para el proyecto.")
 titulo("Objetivo general", 2)
 parrafo("Construir una aplicación de dos contenedores, una API en Node.js y una base de datos PostgreSQL, y automatizar su integración "
-        "continua con Jenkins, de modo que cada cambio en el repositorio se pruebe, se construya y se verifique sin pasos manuales, "
-        "documentando el proceso con evidencias.")
+        "continua con Jenkins, Travis CI y GitHub Actions, de modo que cada cambio en el repositorio se pruebe, se construya y se "
+        "verifique sin pasos manuales, documentando el proceso con evidencias.")
 titulo("Objetivos específicos", 2)
 parrafo("Primero, organizar el proyecto en un repositorio de control de versiones con una estructura clara, publicarlo en GitHub y compartirlo con los integrantes del grupo y con el tutor.")
 parrafo("Segundo, definir un Dockerfile para la API y un archivo de Docker Compose que levante los dos servicios en una red propia, con volumen "
@@ -340,6 +373,10 @@ parrafo("Quinto, instalar y configurar Jenkins con Docker, e identificar las car
 parrafo("Sexto, definir en un Jenkinsfile, versionado junto con el código, un pipeline que descargue el proyecto, ejecute las pruebas, construya "
         "la imagen, levante los contenedores y verifique la API.")
 parrafo("Séptimo, comprobar que el pipeline se ejecuta solo cuando cambia el repositorio y que detiene la integración cuando una prueba falla.")
+parrafo("Octavo, integrar el proyecto con Travis CI y con un servicio equivalente a Codeship, después de verificar el estado de cada "
+        "servicio en su fuente oficial, de modo que ambos ejecuten las mismas etapas que Jenkins.")
+parrafo("Noveno, consolidar el historial de cambios, las sugerencias para la solución de problemas y las responsabilidades y opiniones "
+        "de los integrantes.")
 
 # ================================================================ PRIMERA PARTE
 salto()
@@ -402,7 +439,7 @@ if COLABORADORES_INVITADOS:
                        "Invita a cada integrante como colaborador; el acceso queda activo cuando el integrante acepta la invitación."])
 tabla("Pasos para crear el repositorio en GitHub y publicar el proyecto", ["Paso", "Comando", "Qué hace"], PASOS_REPO, [0.5, 3.2, 2.8])
 if REPO_PUBLICO:
-    parrafo("Los repositorios de GitHub se describen en su documentación oficial (GitHub, s. f.-b). El proyecto está publicado en un repositorio público de "
+    parrafo("Los repositorios de GitHub se describen en su documentación oficial (GitHub, s. f.-e). El proyecto está publicado en un repositorio público de "
             "GitHub, https://github.com/Owito/poli-ic-proyecto1, enlazado como remoto origin del repositorio local. Se creó como privado y se cambió a público "
             "por recomendación del tutor, para que él pueda entrar a validarlo y para que las herramientas de integración continua muestren los errores donde "
             f"los encuentren (Reyes Corredor, 2026). La Figura {F("19-github")} muestra la consulta del repositorio publicado y su historial en GitHub.", keep=True)
@@ -411,7 +448,7 @@ if REPO_PUBLICO:
            "rama main de GitHub apunta al mismo commit que el repositorio local, y la tercera lista el historial tal como quedó publicado. La cuarta pide la "
            "página del repositorio sin iniciar sesión y recibe la respuesta HTTP 200: cualquier persona con el enlace, incluido el tutor, puede abrirlo.")
 else:
-    parrafo("Los repositorios de GitHub se describen en su documentación oficial (GitHub, s. f.-b). El proyecto se publicó en un repositorio privado de "
+    parrafo("Los repositorios de GitHub se describen en su documentación oficial (GitHub, s. f.-e). El proyecto se publicó en un repositorio privado de "
             f"GitHub, https://github.com/Owito/poli-ic-proyecto1, enlazado como remoto origin del repositorio local. La Figura {F("19-github")} muestra la "
             "consulta del repositorio publicado y su historial en GitHub.", keep=True)
     figura("19-github.png", "Repositorio publicado en GitHub",
@@ -427,11 +464,11 @@ else:
                "build_documento.py, recapturar la Figura de GitHub y regenerar.]]")
 if COLABORADORES_INVITADOS:
     ACCESO += (" Los integrantes del grupo, en cambio, se registraron como colaboradores en Settings, Collaborators, la opción que el tutor "
-               "indicó para conformar el equipo de desarrollo y que GitHub documenta en su procedimiento de invitación (GitHub, s. f.-a).")
+               "indicó para conformar el equipo de desarrollo y que GitHub documenta en su procedimiento de invitación (GitHub, s. f.-d).")
 else:
     ACCESO += (" Para que cada integrante pueda subir sus propios cambios, se le registra como colaborador en Settings, Collaborators con su "
                "usuario de GitHub, la opción que el tutor indicó para conformar el equipo de desarrollo y que GitHub documenta en su "
-               "procedimiento de invitación (GitHub, s. f.-a).")
+               "procedimiento de invitación (GitHub, s. f.-d).")
 parrafo(ACCESO)
 
 titulo("Arquitectura de los dos contenedores", 2)
@@ -532,8 +569,8 @@ parrafo("Las pruebas usan el ejecutor integrado de Node.js, node:test, que no re
 figura("15-pruebas.png", "Ejecución de las pruebas dentro del contenedor de la API",
        "Dentro de tareas-app, donde la variable DB_HOST apunta a la base de datos, las cinco pruebas se ejecutan y pasan, sin pruebas omitidas, incluida la de integración contra el contenedor tareas-db. "
        "El resumen final reporta cinco pruebas, cinco aprobadas y cero fallidas.")
-parrafo("Estas mismas pruebas son las que ejecuta Jenkins en la segunda parte de este documento, y las que ejecutarán Travis CI y Codeship en la "
-        "Entrega 3, ya que el comando npm test no depende de ninguna herramienta específica.")
+parrafo("Estas mismas pruebas son las que ejecuta Jenkins en la segunda parte de este documento, y las que ejecutan Travis CI y GitHub Actions en la "
+        "tercera, ya que el comando npm test no depende de ninguna herramienta específica.")
 
 titulo("Conexión entre GitHub y Docker", 2)
 parrafo("El tutor precisó que el alcance de esta entrega es trabajar con GitHub, construir los dos contenedores con Docker y conectar Docker con GitHub "
@@ -544,7 +581,7 @@ parrafo("El tutor precisó que el alcance de esta entrega es trabajar con GitHub
 parrafo("Por eso el repositorio es el punto de encuentro del equipo: cualquier integrante, o el tutor, clona el repositorio y ejecuta docker compose up -d --build "
         "para obtener los mismos dos contenedores, con la misma red y la misma configuración. Cuando alguien modifica el Dockerfile o el docker-compose.yml, el "
         "cambio queda en el historial de commits y los demás lo reciben al actualizar su copia, lo que evita que cada integrante trabaje con una versión distinta "
-        "del ambiente. Es también la conexión que aprovecha Jenkins en la segunda parte, y la que aprovecharán Travis CI y Codeship en la Entrega 3, "
+        "del ambiente. Es también la conexión que aprovechan Jenkins en la segunda parte, y Travis CI y GitHub Actions en la tercera, "
         "que toman el código del repositorio para construir los contenedores y ejecutar las pruebas.")
 parrafo(f"Para comprobarlo, el proyecto se clonó desde el repositorio público en una carpeta nueva, sin iniciar sesión en GitHub, y se levantó "
         f"con otro nombre de proyecto de Docker Compose, tareas-clon, para no reutilizar el volumen del ambiente original. La Figura {F("21-clon-github")} "
@@ -863,13 +900,378 @@ parrafo("Con Docker Desktop en ejecución, se crea una copia local del repositor
         f"{F('j12-configuracion-scm')} y {F('j12b-ruta-jenkinsfile')}. La primera ejecución se lanza con Build Now; desde ahí, cada commit nuevo "
         "en la rama lanza el pipeline solo.")
 
+# ================================================================ TERCERA PARTE (ENTREGA 3)
+# Letras de las referencias sin fecha de cada autor, en el orden alfabético de sus títulos (APA 7). Se usan en las citas.
+TR = {"faq": "a", "facturacion": "b", "node": "c", "validacion": "d", "etapas": "e", "precios": "f", "ciclo": "g",
+      "inicio": "h", "noble": "i", "docker": "j"}
+CB = {"free": "a", "aviso": "b", "faq": "c", "unify": "d", "gha": "e", "resumen": "f", "precio": "g", "jet": "h",
+      "services": "i", "steps": "j", "flujos": "k"}
+GH = {"facturacion": "a", "expresiones": "b", "pack": "c", "sintaxis": "f"}
+
+
+def tr(k):
+    return f"Travis CI, s. f.-{TR[k]}"
+
+
+def cb(k):
+    return f"CloudBees, s. f.-{CB[k]}"
+
+
+def gh(k):
+    return f"GitHub, s. f.-{GH[k]}"
+
+
+def historial():
+    """Historial real del repositorio: una fila por commit, del primero al más reciente."""
+    salida = subprocess.run(["git", "-C", str(RAIZ), "log", "--reverse", "--date=format:%Y-%m-%d", "--format=%h|%ad|%an|%s"],
+                            capture_output=True, text=True, encoding="utf-8", check=True).stdout
+    filas = []
+    for i, linea_git in enumerate(salida.strip().splitlines(), 1):
+        corto, fecha, autor, asunto = linea_git.split("|", 3)
+        tipo, _, descripcion = asunto.partition(": ")
+        entrega = "1" if fecha < "2026-11-10" else ("2" if fecha < "2026-11-19" else "3")
+        filas.append([str(i), corto, fecha, autor, tipo, descripcion, entrega])
+    return filas
+
+
+HISTORIAL = historial()
+
+salto()
+titulo("Tercera parte: integración con Travis CI y Codeship, historial y solución de problemas", 1)
+parrafo("El enunciado de la Entrega 3 pide que, en este punto, la plataforma de software esté totalmente integrada con contenedores, "
+        "Jenkins, Travis CI y Codeship, y que en un documento se consoliden el historial de cambios y las sugerencias para la solución "
+        "de problemas, así como las responsabilidades y opiniones (Politécnico Grancolombiano, s. f.). Esta parte agrega al proyecto dos "
+        "integraciones continuas en la nube que ejecutan las mismas etapas que el Jenkinsfile de la segunda parte, explica qué ocurrió con "
+        "Codeship y cómo se reemplazó, y reúne el historial, los problemas encontrados en las tres entregas con su solución, y las "
+        "responsabilidades y opiniones del grupo.")
+parrafo("Para elegir las herramientas se tuvo en cuenta una indicación que el tutor repitió en varios encuentros: si una herramienta "
+        "obliga a pagar una licencia, el grupo debe buscar otra que cumpla la misma función y que sea libre, porque “no se trata de que "
+        "paguen la herramienta” (Reyes Corredor, 2026).")
+
+titulo("Estado de Travis CI y Codeship en noviembre de 2026", 2)
+parrafo(f"Los servicios de integración continua en la nube cambian sus planes con el tiempo, así que antes de escribir cualquier "
+        f"configuración se consultó, el 19 de noviembre de 2026, la documentación oficial de cada servicio. La Tabla {sig('tab')} resume "
+        f"lo encontrado y las Figuras {sig('fig')}, {sig('fig') + 1} y {sig('fig') + 2} muestran las fuentes.")
+tabla("Estado de los servicios verificado el 19 de noviembre de 2026", ["Servicio", "Qué se encontró", "Consecuencia para el proyecto"], [
+    ["Travis CI",
+     f"Sigue en operación. Los planes publicados son de pago, desde 15 dólares al mes por 35.000 créditos de Linux ({tr('precios')}). "
+     f"La documentación de facturación indica que la prueba gratuita no está disponible por ahora y que un minuto de Linux cuesta 10 "
+     f"créditos ({tr('facturacion')}). Ofrece créditos para código abierto, solo para repositorios públicos, que se solicitan al soporte "
+     f"({tr('faq')}), y el GitHub Student Developer Pack incluye compilaciones privadas gratuitas de Travis CI mientras se es estudiante ({gh('pack')}).",
+     "Se puede integrar. El archivo .travis.yml queda listo y validado; para ejecutarlo en la nube, la cuenta de Travis CI necesita créditos por una de esas vías."],
+    ["Codeship",
+     f"CloudBees dejó de dar soporte a CodeShip en enero de 2026 y recomienda migrar a CloudBees Unify ({cb('aviso')}); el retiro definitivo "
+     f"estaba anunciado para el 31 de enero de 2026 ({cb('resumen')}). El plan gratuito se había eliminado el 1 de marzo de 2023 ({cb('free')}). "
+     "Su aplicación, app.codeship.com, redirige al aviso de fin de vida.",
+     "No se puede integrar, porque el servicio ya no existe. Se reemplaza por una herramienta equivalente."],
+    ["CloudBees Unify",
+     f"Es el producto al que CloudBees recomienda migrar. Su precio se obtiene con una cotización personalizada ({cb('precio')}) y su "
+     f"página ofrece una prueba gratuita ({cb('unify')}).",
+     "Se evaluó como reemplazo de Codeship."],
+    ["GitHub Actions",
+     f"Su uso es gratuito con los ejecutores estándar de GitHub en repositorios públicos ({gh('facturacion')}).",
+     "Se evaluó como reemplazo de Codeship."],
+], [1.1, 3.4, 2.0])
+figura("t01-travis-prueba-gratuita.png", "Aviso de la documentación de Travis CI sobre la prueba gratuita",
+       "La sección Free Trial Plan de la documentación de facturación de Travis CI empieza con el aviso Free Trial Plans are currently "
+       "unavailable, es decir, que por ahora no se ofrecen planes de prueba gratuita. El texto siguiente describe cómo era esa prueba: "
+       "10.000 créditos, equivalentes a 1.000 minutos de Linux, válidos por 14 días, y una validación con tarjeta de crédito mediante un "
+       "cobro de autorización de un dólar que luego se devuelve. Por eso la activación de Travis CI queda como una decisión del grupo.")
+figura("t02-codeship-fin-de-vida.png", "Aviso de fin de vida de CloudBees CodeShip",
+       "La dirección de la documentación de CodeShip ya no muestra la documentación del producto: redirige a esta página, en la que "
+       "CloudBees anuncia que desde enero de 2026 no da soporte a CloudBees CodeShip y recomienda migrar a CloudBees Unify.", ancho=4.6)
+figura("t03-codeship-cierre.png", "Comprobación del cierre de Codeship desde la terminal",
+       "La primera consulta pide la aplicación de Codeship, app.codeship.com, donde se configuraban los proyectos, y el servidor responde con "
+       "una redirección permanente (301) hacia el aviso de fin de vida. La segunda hace lo mismo con la documentación y la tercera confirma "
+       "el texto del aviso. La última pide el instalador de Jet, la herramienta de línea de comandos con la que CodeShip Pro permitía "
+       f"ejecutar su configuración en el equipo local ({cb('jet')}), y el servidor responde 403 Forbidden: tampoco hay una forma local de "
+       "ejecutar una configuración de Codeship.")
+
+titulo("Arquitectura de la integración continua del proyecto", 2)
+parrafo(f"Con esos hallazgos, el proyecto queda integrado con tres herramientas que leen el mismo repositorio: Jenkins, de la segunda "
+        f"parte; Travis CI; y GitHub Actions, en lugar de Codeship. La Figura {sig('fig')} resume la arquitectura y la Tabla "
+        f"{sig('tab')} muestra que las tres ejecutan las mismas etapas.", keep=True)
+figura("diagrama-tres-ci.png", "Arquitectura de la integración continua en la Entrega 3",
+       "Cada integrante sube sus cambios con git push al repositorio de GitHub, donde están los tres archivos de configuración: Jenkinsfile, "
+       ".travis.yml y .github/workflows/integracion-continua.yml. Jenkins revisa la rama cada dos minutos desde el equipo del proyecto; Travis CI "
+       "y GitHub Actions se activan con cada push y ejecutan el trabajo en máquinas de la nube. Abajo están las seis etapas comunes. Codeship "
+       "aparece como retirado y reemplazado por GitHub Actions.")
+tabla("Etapas equivalentes en las tres herramientas", ["Etapa", "Jenkins (Jenkinsfile)", "Travis CI (.travis.yml)", "GitHub Actions (integracion-continua.yml)"], [
+    ["Descargar el código", "checkout scm", "Travis CI clona el repositorio en la máquina virtual antes de empezar", "actions/checkout@v7"],
+    ["Pruebas unitarias", "Contenedor node:22-alpine, npm ci y npm test, con límite de 3 minutos",
+     "Etapa pruebas unitarias: Node.js 22 de la máquina virtual, npm ci y timeout 180 npm test",
+     "Job pruebas-unitarias: contenedor node:22-alpine, npm ci y npm test, con timeout-minutes: 3"],
+    ["Construir la imagen", "docker compose build app", "docker compose build app, en before_script", "Paso docker compose build app"],
+    ["Levantar los dos contenedores", ".env con la credencial de Jenkins y docker compose up -d --wait",
+     ".env con la variable CLAVE_DB o una clave al azar, y docker compose up -d --wait", ".env con una clave al azar y docker compose up -d --wait"],
+    ["Verificar /salud", "curl a http://docker:8095/salud", "curl a http://localhost:8095/salud, con reintentos", "Igual que en Travis CI"],
+    ["Pruebas de integración", "docker compose exec -T app npm test", "Igual que en Jenkins", "Igual que en Jenkins"],
+    ["Limpieza", "Sección post, always: docker compose down -v y borrar el .env", "after_script, que corre siempre", "Último paso, con if: always()"],
+    ["Si fallan las unitarias", "Las etapas siguientes se saltan", "Travis CI cancela la etapa contenedores", "El job contenedores se salta (needs)"],
+], [1.2, 1.7, 1.8, 1.8])
+
+titulo("Travis CI", 2)
+titulo("Qué es Travis CI", 3)
+parrafo(f"Travis CI es un servicio de integración continua que se usa para probar y construir proyectos alojados en GitHub, Assembla, "
+        f"Bitbucket o GitLab ({tr('inicio')}). Para cada job crea una máquina virtual con el ambiente de compilación, clona el repositorio en "
+        f"ella y ejecuta las fases definidas en el archivo .travis.yml ({tr('ciclo')}). A diferencia de Jenkins, no hay que instalar ni mantener "
+        "un servidor: la configuración vive en el repositorio y la ejecución ocurre en la infraestructura de Travis CI. El tutor la nombró, "
+        "junto con GitHub, Docker y Jenkins, entre las herramientas que el proyecto debía permitir implementar (Reyes Corredor, 2026).")
+titulo("Cómo se conecta el repositorio de GitHub con Travis CI", 3)
+parrafo(f"La guía de inicio de Travis CI describe la conexión en seis pasos, que la Tabla {sig('tab')} adapta al proyecto ({tr('inicio')}).", keep=True)
+TABLA_TRAVIS = sig("tab")
+tabla("Pasos para conectar el repositorio con Travis CI", ["Paso", "Acción", "Detalle"], [
+    ["1", "Entrar a travis-ci.com e iniciar sesión con la cuenta de GitHub", "El registro se hace con la cuenta del servicio donde está el repositorio, en este caso la propietaria de Owito/poli-ic-proyecto1."],
+    ["2", "Aceptar la autorización de Travis CI", "GitHub muestra la solicitud de autorización de Travis CI y el propietario la acepta."],
+    ["3", "Elegir un plan",
+     f"Por ahora la prueba gratuita no está disponible ({tr('facturacion')}). Las alternativas sin pago son pedir al soporte créditos para "
+     f"código abierto, indicando el nombre de la cuenta y los créditos que se necesitan ({tr('faq')}), o el plan del GitHub Student Developer "
+     f"Pack, que según la guía puede no asignarse solo y requerir una solicitud al soporte ({tr('inicio')})."],
+    ["4", "Registrar los datos de facturación", f"La guía indica que, para iniciar el plan elegido, hay que registrar los datos de facturación y una tarjeta de crédito válida ({tr('inicio')})."],
+    ["5", "Settings y Manage Repositories", "Desde el perfil, en Settings, el botón Manage Repositories lleva a GitHub para elegir los repositorios que usará Travis CI; ahí se selecciona Owito/poli-ic-proyecto1."],
+    ["6", "Subir un commit", f"Travis CI solo construye los commits que se suben después de agregar el archivo .travis.yml ({tr('inicio')}); el resultado se consulta en la página del repositorio en Travis CI."],
+], [0.5, 2.0, 4.0])
+parrafo("Estos pasos todavía no se ejecutaron: crear la cuenta y elegir el plan son decisiones del grupo, porque implican aceptar las "
+        "condiciones de un tercero y, en un plan de pago, un costo. Mientras tanto, el archivo se validó y se ejecutó en el equipo del "
+        "proyecto, como se explica más adelante.")
+titulo("El archivo .travis.yml explicado", 3)
+parrafo(f"El Listado {sig('lis')} contiene el archivo completo, guardado en la raíz del repositorio.", keep=True)
+listado("Archivo .travis.yml del proyecto", ".travis.yml")
+parrafo(f"**version: ~> 1.0** activa la validación de la configuración, que revisa el archivo contra una especificación formal en JSON "
+        f"Schema y muestra sus mensajes en la pestaña View Config de cada ejecución ({tr('validacion')}). **os: linux** y **dist: noble** piden "
+        f"una máquina con Ubuntu 24.04, que según la documentación trae Docker 28.5.1, docker-compose 2.40.2 y Node.js 22.14.0 ({tr('noble')}). "
+        f"**language: node_js** con **node_js: \"22\"** usa la última versión 22.x de Node.js ({tr('node')}), la misma versión mayor de la imagen "
+        "node:22-alpine con la que se construye la API.")
+parrafo(f"**jobs.include** define dos jobs, cada uno en su propia etapa (stage). Travis CI ejecuta las etapas una después de la otra y solo "
+        f"pasa a la siguiente si todos los jobs de la anterior terminaron bien; si uno falla, cancela los jobs de las etapas siguientes y la "
+        f"ejecución queda fallida ({tr('etapas')}). Así se reproduce la regla del Jenkinsfile: si las pruebas unitarias fallan, no se construye "
+        "la imagen ni se levantan los contenedores.")
+parrafo(f"Cada job pasa por fases con reglas distintas ({tr('ciclo')}). Si falla un comando de install o de before_script, el job queda en "
+        "estado errored y se detiene. Si falla un comando de script, los demás comandos de script se ejecutan igual y el job queda failed. "
+        "after_script se ejecuta siempre y no cambia el resultado. Por eso la construcción de la imagen y el arranque de los contenedores "
+        "están en before_script, ya que sin ellos no tiene sentido probar nada; la consulta a /salud y las pruebas de integración están en "
+        "script, y si /salud fallara, las pruebas de integración se ejecutarían igual y también fallarían, lo que da más información sin "
+        "cambiar el resultado; y la limpieza está en after_script.")
+parrafo(f"En la segunda etapa, **services: docker** activa Docker en la máquina virtual ({tr('docker')}) e **install: skip** omite la "
+        f"instalación de dependencias en la máquina ({tr('ciclo')}), porque las pruebas de integración corren dentro del contenedor de la API. "
+        f"La línea que empieza con docker compose version cubre una diferencia de nombres: la documentación de Travis CI habla del programa "
+        f"docker-compose ({tr('docker')}), mientras el proyecto usa el subcomando docker compose; si el subcomando no existe, se enlaza el "
+        "programa como complemento de Docker.")
+parrafo("Tres decisiones vienen de lo aprendido con Jenkins. La clave de la base de datos no está en el archivo: se toma de la variable "
+        "CLAVE_DB si el grupo la define en la configuración del repositorio en Travis CI y, si no, se genera al azar con openssl en cada "
+        "ejecución, porque la base solo existe dentro de la máquina virtual y se borra al final. Las pruebas unitarias tienen un tiempo "
+        "límite de tres minutos con el comando timeout, la lección de la ejecución 2 de Jenkins. Y la consulta a /salud reintenta hasta "
+        "diez veces, cada dos segundos, porque en docker-compose.yml solo la base de datos tiene comprobación de salud y la API puede tardar "
+        "unos instantes en aceptar conexiones después de arrancar.")
+titulo("Ejecución en Travis CI", 3)
+parrafo("[[COMPLETAR: captura del build en Travis una vez Carlos conecte la cuenta (las dos etapas en verde y la consola de la etapa "
+        "contenedores con la respuesta de /salud y las pruebas de integración)]]")
+
+titulo("Codeship y su reemplazo", 2)
+titulo("Qué era Codeship", 3)
+parrafo(f"CodeShip era el servicio de integración continua en la nube de CloudBees y tenía dos modalidades. CodeShip Basic ejecutaba los "
+        f"comandos de cada proyecto, configurados en la propia aplicación, dentro de un contenedor con Ubuntu 20.04 ({cb('free')}). CodeShip Pro "
+        f"funcionaba con Docker y se configuraba con dos archivos del repositorio: codeship-services.yml, donde cada servicio necesario para la "
+        f"ejecución corre en un contenedor de Docker y cuya sintaxis es muy parecida, y en buena parte compatible, con la de docker-compose.yml "
+        f"({cb('services')}), y codeship-steps.yml, con la lista de pasos que se ejecutan en orden, cada uno con el servicio en el que corre y su "
+        f"comando ({cb('steps')}). Jet, su herramienta de línea de comandos, permitía ejecutar esa misma configuración en el equipo local ({cb('free')}).")
+titulo("Por qué no se puede integrar", 3)
+parrafo(f"Codeship ya no existe como servicio. CloudBees anunció que lo descontinuaría el 31 de enero de 2026 y que después de esa fecha "
+        f"quedaría inaccesible ({cb('resumen')}), y hoy su documentación y su aplicación redirigen al aviso de fin de vida (Figuras "
+        f"{F('t02-codeship-fin-de-vida')} y {F('t03-codeship-cierre')}). Además, el plan gratuito se había eliminado el 1 de marzo de 2023 y el "
+        f"programa para código abierto estaba cerrado ({cb('free')}), y el instalador de Jet ya no se puede descargar. Por lo tanto, no hay forma "
+        "de crear una cuenta ni de ejecutar una configuración de Codeship, ni en la nube ni en el equipo local. Escribir los archivos "
+        "codeship-services.yml y codeship-steps.yml habría dejado en el repositorio una configuración que nadie puede ejecutar, así que no se agregaron.")
+titulo("Elección del reemplazo", 3)
+parrafo(f"Siguiendo la indicación del tutor, se buscó una herramienta que cumpliera las mismas funciones de Codeship y que fuera libre o "
+        f"gratuita (Reyes Corredor, 2026). Se compararon dos candidatas: CloudBees Unify, el producto al que CloudBees recomienda migrar, y "
+        f"GitHub Actions, el servicio de integración continua de GitHub, que el tutor mencionó en el primer encuentro como ejemplo de un sistema "
+        f"que se activa y ejecuta pruebas automáticamente sobre el código que se sube al repositorio (Reyes Corredor, 2026). La Tabla "
+        f"{sig('tab')} resume la comparación y la Figura {sig('fig')} muestra la condición de costo de GitHub Actions.", keep=True)
+tabla("Comparación de CodeShip Pro con las alternativas", ["Criterio", "CodeShip Pro", "CloudBees Unify", "GitHub Actions"], [
+    ["En servicio en noviembre de 2026", "No, retirado en enero de 2026", "Sí", "Sí"],
+    ["Dónde se ejecuta", "Nube de CloudBees", f"Infraestructura de CloudBees Unify o ejecutores propios ({cb('flujos')})", f"Ejecutores de GitHub o propios ({gh('facturacion')})"],
+    ["Configuración en el repositorio", "codeship-services.yml y codeship-steps.yml", f"Archivos YAML en .cloudbees/workflows/ ({cb('flujos')})", f"Archivos YAML en .github/workflows/ ({gh('sintaxis')})"],
+    ["Trabajo con Docker", "Cada servicio es un contenedor", f"Motor de CI/CD basado en Tekton ({cb('faq')})", "El ejecutor ubuntu-24.04 trae Docker 28.0.4 y Docker Compose 2.38.2 (GitHub, 2026)"],
+    ["Costo para un repositorio público", f"Plan gratuito retirado en 2023 ({cb('free')})", f"Cotización personalizada; prueba gratuita ({cb('unify')}; {cb('precio')})", f"Gratuito con los ejecutores estándar ({gh('facturacion')})"],
+    ["Cuenta adicional", "Sí", "Sí", "No, usa la cuenta de GitHub del repositorio"],
+    ["Mencionado por el tutor", "No", "No", "Sí"],
+], [1.5, 1.5, 1.8, 1.7])
+figura("t04-actions-gratis-publicos.png", "Condición de costo de GitHub Actions para repositorios públicos",
+       "La documentación de facturación de GitHub Actions dice que su uso es gratuito con los ejecutores estándar alojados por GitHub en "
+       "repositorios públicos y con ejecutores propios. El repositorio del proyecto es público, así que las ejecuciones no tienen costo.", ancho=5.6)
+parrafo(f"GitHub Actions es el equivalente más fiel por cuatro razones. Primera, conserva lo esencial de Codeship: un servicio en la nube, "
+        "sin servidor propio, que se activa con cada cambio y se configura con archivos YAML versionados junto al código. Segunda, como "
+        "CodeShip Pro, ejecuta los pasos con Docker: las pruebas unitarias corren dentro de un contenedor node:22-alpine y las de integración "
+        "usan el mismo docker-compose.yml, que cumple el papel que tenía codeship-services.yml. Tercera, es gratuito para un repositorio "
+        "público; CloudBees Unify, aunque es el sucesor oficial y también usa flujos YAML en el repositorio, es una plataforma empresarial con "
+        "precio por cotización, lo que va en contra de la indicación del tutor. Cuarta, no exige crear otra cuenta, porque funciona con la de "
+        f"GitHub. Además, CloudBees Unify puede mostrar los flujos y las ejecuciones de GitHub Actions ({cb('gha')}), de modo que la elección no "
+        "cierra la puerta al producto que recomienda CloudBees.")
+titulo("Equivalencia entre CodeShip Pro y GitHub Actions", 3)
+parrafo(f"La Tabla {sig('tab')} muestra cómo se traduce cada concepto de CodeShip Pro al flujo de GitHub Actions del proyecto.", keep=True)
+tabla("Conceptos de CodeShip Pro y su equivalente en el proyecto", ["CodeShip Pro", "GitHub Actions", "En este proyecto"], [
+    [f"codeship-services.yml: servicios que corren como contenedores, con sintaxis parecida a docker-compose.yml ({cb('services')})",
+     "Contenedores que el flujo levanta con Docker", "El docker-compose.yml de la primera parte, sin cambios"],
+    [f"codeship-steps.yml: pasos en orden, cada uno con su servicio y su comando ({cb('steps')})", "jobs y steps con run",
+     "Dos jobs, pruebas-unitarias y contenedores, con sus pasos"],
+    ["Paso que corre dentro de un servicio", "docker run o docker compose exec",
+     "Pruebas unitarias dentro de node:22-alpine y pruebas de integración dentro de tareas-app"],
+    [f"Tiempo límite por paso ({cb('steps')})", f"timeout-minutes por job o por paso ({gh('sintaxis')})", "15 minutos por job y 3 para las pruebas unitarias"],
+    [f"Pasos que se ejecutan ante una falla ({cb('steps')})", f"Condición if con always() o failure() ({gh('expresiones')})", "La limpieza, con if: always()"],
+    [f"Jet, para ejecutar la configuración en el equipo local ({cb('free')})", "No aplica", "El script tools/simular_ci.py, descrito más adelante"],
+], [2.4, 1.9, 2.2])
+titulo("El flujo de GitHub Actions explicado", 3)
+parrafo(f"Un flujo de trabajo es un proceso automatizado configurable, formado por uno o más jobs, que se define en un archivo YAML guardado "
+        f"en la carpeta .github/workflows del repositorio ({gh('sintaxis')}). El Listado {sig('lis')} contiene el flujo del proyecto.", keep=True)
+listado("Archivo .github/workflows/integracion-continua.yml", r".github\workflows\integracion-continua.yml")
+parrafo(f"**on** indica cuándo se ejecuta: con cada push a cualquier rama, con cada pull request y a mano (workflow_dispatch); el disparador "
+        f"manual solo funciona cuando el archivo ya está en la rama por defecto, main ({gh('sintaxis')}). **permissions** limita el token del "
+        f"flujo a leer el contenido del repositorio, porque el flujo no necesita escribir nada. **concurrency** agrupa las ejecuciones de una "
+        f"misma rama y, con cancel-in-progress, cancela la que esté en curso cuando llega un commit nuevo ({gh('sintaxis')}).")
+parrafo(f"El job **pruebas-unitarias** corre en un ejecutor ubuntu-24.04, descarga el código con actions/checkout y ejecuta npm ci y npm test "
+        f"dentro de un contenedor node:22-alpine, igual que la etapa de Jenkins, con un tiempo límite de tres minutos. El job **contenedores** "
+        f"tiene needs: pruebas-unitarias, así que GitHub Actions solo lo ejecuta si el primero termina bien; si el primero falla o se salta, "
+        f"este también se salta ({gh('sintaxis')}). Sus pasos escriben el .env con una clave de un solo uso, construyen la imagen, levantan los "
+        f"dos contenedores, consultan /salud y ejecutan las pruebas de integración. Cada paso se ejecuta solo si los anteriores tuvieron éxito, "
+        f"salvo que tenga otra condición ({gh('expresiones')}); el último tiene if: always(), que lo ejecuta siempre ({gh('expresiones')}), así que "
+        "baja los contenedores y borra el .env aunque algo haya fallado, como la sección post del Jenkinsfile.")
+parrafo(f"**timeout-minutes** fija un máximo de 15 minutos por job; sin él, GitHub cancela un job después de 360 minutos ({gh('sintaxis')}). "
+        "El ejecutor ubuntu-24.04 trae Docker 28.0.4, Docker Compose 2.38.2 y Node.js 22.23.4, según la documentación de su imagen "
+        "20261111.370.1 (GitHub, 2026).")
+titulo("Ejecución en GitHub Actions", 3)
+parrafo("GitHub Actions está habilitado en el repositorio, según la consulta a la API de GitHub del 19 de noviembre de 2026, y el "
+        "disparador push aplica a cualquier rama; por eso el flujo se ejecutará solo en cuanto se publique en GitHub la rama de esta entrega.")
+parrafo("[[COMPLETAR: captura de la ejecución en GitHub Actions después de publicar la rama (los dos jobs en verde y el paso Verificar /salud)]]")
+
+titulo("Validación local de las dos configuraciones", 2)
+parrafo("Antes de conectar los servicios se comprobó en el equipo del proyecto que los dos archivos están bien escritos y que sus comandos "
+        "funcionan con el proyecto real. Se hizo en dos niveles.")
+titulo("Revisión de la sintaxis", 3)
+parrafo(f"El script tools/validar_ci.py lee los dos archivos, los valida contra el esquema oficial de Travis CI, publicado en el repositorio "
+        f"travis-ci/travis-yml (Travis CI, 2026), y contra el esquema de flujos de GitHub Actions de SchemaStore (SchemaStore, s. f.), y "
+        f"comprueba que ambos contengan los pasos del Jenkinsfile en el mismo orden. Además, el flujo de GitHub Actions se revisó con "
+        f"actionlint 1.7.12 (rhysd, 2026), que analiza también con ShellCheck los comandos de Bash de cada paso, y los comandos de .travis.yml "
+        f"se revisaron con el mismo ShellCheck. La Figura {sig('fig')} muestra el resultado.", keep=True)
+figura("t05-validacion-ci.png", "Validación de la sintaxis de .travis.yml y del flujo de GitHub Actions",
+       "Los diez controles del validador están en OK, con cero fallas: los dos archivos son YAML válido, cumplen sus esquemas, tienen las "
+       "etapas en orden, contienen los pasos del Jenkinsfile y no escriben ninguna clave. actionlint revisa el único flujo del repositorio y "
+       "no encuentra errores, y ShellCheck no reporta hallazgos en los comandos de Travis CI.")
+parrafo("El esquema de Travis CI tiene un límite que conviene conocer. En una prueba con errores introducidos a propósito, detectó un "
+        "sistema operativo inexistente y una distribución con formato inválido, pero aceptó un bloque script escrito como mapa y un valor "
+        "services numérico, porque el esquema admite varias formas de escribir la configuración que Travis CI luego normaliza (Travis CI, "
+        f"2026). Por eso la revisión de la sintaxis se complementó con la ejecución de los comandos, y la revisión definitiva será la pestaña "
+        f"View Config del primer build en Travis CI ({tr('validacion')}).")
+titulo("Ejecución de los comandos en el equipo", 3)
+parrafo(f"El script tools/simular_ci.py lee .travis.yml o el flujo de GitHub Actions y ejecuta sus comandos en orden, con Bash y con el "
+        f"Docker del equipo, respetando las reglas de cada servicio: en Travis CI, las fases y las etapas descritas antes; en GitHub Actions, "
+        f"que un paso fallido salta los siguientes salvo los que tienen if: always(), y que un job fallido salta los que dependen de él. No "
+        f"reemplaza la ejecución en la nube, porque no usa las máquinas de Travis CI ni de GitHub, pero demuestra que los comandos escritos en "
+        f"los archivos funcionan con el proyecto real. Las Figuras {sig('fig')} y {sig('fig') + 1} muestran los resultados.")
+figura("t06-travis-local.png", "Ejecución en el equipo de los comandos de .travis.yml",
+       "Primero corre la etapa pruebas unitarias: npm ci instala 82 paquetes y npm test termina con cuatro pruebas aprobadas y una omitida, la "
+       "de integración, porque en esa etapa no hay base de datos. Después corre la etapa contenedores: se construye la imagen, Docker Compose "
+       "reporta tareas-db y tareas-app como Healthy, /salud responde con la versión de PostgreSQL leída de la base y las cinco pruebas pasan "
+       "dentro del contenedor de la API. La limpieza borra el volumen y la red, y las dos etapas terminan en passed.", ancho=5.0)
+figura("t07-actions-local.png", "Ejecución en el equipo de los comandos del flujo de GitHub Actions",
+       "El job pruebas-unitarias omite actions/checkout, porque el código ya está en la carpeta, y corre las pruebas dentro de node:22-alpine, "
+       f"con Node.js 22.23.5: cuatro aprobadas y una omitida. Como terminó bien, corre el job contenedores, con el mismo resultado que en la "
+       f"Figura {F('t06-travis-local')}: imagen construida, contenedores saludables, /salud con PostgreSQL 16.14 y cinco pruebas aprobadas. El "
+       "último paso baja los contenedores. Los dos jobs terminan en success.", ancho=5.0)
+
+titulo("Historial de cambios", 2)
+autores = sorted({f[3] for f in HISTORIAL})
+parrafo(f"El historial de cambios del proyecto es el historial de Git del repositorio. La Tabla {sig('tab')} lo reproduce completo, del primer "
+        f"commit al más reciente, tal como lo entrega el comando git log al generar este documento: {len(HISTORIAL)} commits. Cada fila tiene "
+        "el identificador corto del commit, la fecha, el autor, el tipo de cambio según la convención usada desde la primera parte (feat para "
+        "funciones nuevas, fix para correcciones, test para pruebas, ci para integración continua y docs para documentación), la descripción "
+        "y la entrega a la que pertenece.", keep=True)
+tabla("Historial de commits del repositorio", ["N.º", "Commit", "Fecha", "Autor", "Tipo", "Descripción", "Entrega"], HISTORIAL,
+      [0.35, 0.7, 0.9, 0.85, 0.45, 2.65, 0.6])
+parrafo("Tres observaciones ayudan a leerlo. Los commits del 8 de noviembre con un número entre paréntesis, de (#1) a (#3), son solicitudes "
+        "de cambio (pull requests) integradas en la rama main desde GitHub; la solicitud #4, que completa un nombre en la portada, seguía "
+        "abierta en la consulta a GitHub del 19 de noviembre de 2026. Los commits d06d969, 25bcac6 y 53d6fe3 son la prueba de la segunda "
+        "parte: el error introducido a propósito, la corrección de las pruebas y del pipeline, y la reversión. Y los nombres de autor "
+        f"{' y '.join(autores)} corresponden a la misma dirección de correo en Git, la de Carlos Fernando Guerra Arango. El commit que agrega "
+        "este documento se registra después de generarlo, por eso no aparece en la tabla. El historial de ejecuciones de Jenkins está en "
+        "la Tabla 8 de la segunda parte.")
+
+titulo("Sugerencias para la solución de problemas", 2)
+parrafo(f"La Tabla {sig('tab')} reúne los problemas que aparecieron durante las tres entregas, con la causa encontrada, cómo se resolvió y "
+        "una sugerencia para que no se repita. Los dos últimos son preventivos: no ocurrieron en el proyecto, pero la documentación oficial "
+        "advierte sobre ellos.", keep=True)
+tabla("Problemas encontrados, causas, soluciones y sugerencias", ["Problema", "Causa", "Solución aplicada", "Sugerencia"], [
+    ["La ejecución 2 de Jenkins quedó esperando siete minutos y hubo que abortarla.",
+     "La prueba que falló dejaba abierto el servidor de prueba: la instrucción que lo cerraba estaba después de la aserción.",
+     "Commit 25bcac6: cierre con t.after() y tiempos límite en el Jenkinsfile.",
+     "Liberar los recursos de cada prueba en t.after() o en finally y poner tiempo límite a cada etapa; Travis CI y GitHub Actions ya lo tienen."],
+    ["La ejecución 3 de Jenkins terminó en rojo en las pruebas unitarias.",
+     "El commit d06d969 rompió a propósito la regla del título obligatorio: la API respondía 500 donde la prueba esperaba 400.",
+     "Commit 53d6fe3, que revierte el cambio.",
+     "Leer en la consola la línea not ok, con el valor esperado y el obtenido; si un cambio rompe una regla del negocio, revertirlo y corregirlo en un commit nuevo, sin desactivar la prueba."],
+    ["El puerto 8080, el de Jenkins por defecto, estaba ocupado.", "Otra aplicación del equipo lo usaba.",
+     "Jenkins se publicó en el 8181, un parámetro del script de instalación.",
+     "Dejar los puertos como parámetros de los scripts y no escritos en varios lugares."],
+    ["Jenkins no podía leer la rama de la Entrega 2, que no estaba publicada en GitHub.",
+     "El plugin Git bloquea por seguridad los repositorios locales (SECURITY-2478).",
+     "Copia local de solo lectura con la propiedad ALLOW_LOCAL_CHECKOUT, como medida temporal.",
+     "Publicar la rama, apuntar el trabajo a https://github.com/Owito/poli-ic-proyecto1.git y retirar la propiedad."],
+    ["Al iniciar Docker Desktop arrancaron solos el contenedor jenkins y contenedores de otros proyectos.",
+     "Esos contenedores tienen políticas de reinicio; la de jenkins es on-failure.",
+     "Se detuvo jenkins con docker stop y, al terminar el trabajo, se detuvo Docker Desktop.",
+     "Después de iniciar Docker Desktop, revisar docker ps y detener lo que no se necesita, para no consumir memoria ni ocupar puertos."],
+    ["ShellCheck reportó el error SC1017 en todas las líneas de los comandos de Travis CI.",
+     "El archivo intermedio se generó en Windows con finales de línea CRLF, que Bash no acepta.",
+     "El validador ahora escribe esos comandos con finales de línea LF.",
+     "En Windows, guardar los scripts de Bash con finales de línea LF."],
+    ["Travis CI no ofrece hoy una prueba gratuita.",
+     f"Cambio en los planes de Travis CI, que además pide validar una tarjeta de crédito ({tr('facturacion')}).",
+     "La configuración quedó lista y validada en el equipo, a la espera de la cuenta.",
+     "Pedir al soporte créditos para código abierto o el plan del GitHub Student Developer Pack antes de considerar un plan de pago."],
+    ["Codeship no se puede usar.",
+     f"CloudBees lo retiró el 31 de enero de 2026 ({cb('resumen')}); ni la aplicación ni Jet están disponibles.",
+     "Reemplazo por GitHub Actions, con las mismas etapas.",
+     "Antes de planear el uso de una herramienta, revisar su estado en la documentación oficial."],
+    ["El esquema de Travis CI aceptó errores introducidos a propósito.",
+     "El esquema admite varias formas de escribir la configuración, porque Travis CI la normaliza.",
+     "Se complementó con la ejecución de los comandos en el equipo.",
+     f"Revisar los mensajes de la pestaña View Config del primer build ({tr('validacion')})."],
+    ["Preventivo: límite de descargas de Docker Hub en Travis CI.",
+     f"La documentación de Travis CI advierte que, por ese límite, habrá que agregar credenciales propias a la configuración ({tr('docker')}).",
+     "No se ha necesitado.",
+     "Si una ejecución falla al descargar node:22-alpine o postgres:16-alpine, iniciar sesión en Docker Hub con variables de la configuración de Travis CI."],
+    ["Preventivo: el subcomando docker compose no existe en la máquina de Travis CI.",
+     f"La documentación de Travis CI menciona el programa docker-compose ({tr('docker')}).",
+     "El .travis.yml enlaza el programa como complemento de Docker si hace falta.",
+     "Imprimir docker --version y docker compose version al inicio de cada ejecución para detectar el cambio pronto."],
+], [1.5, 1.7, 1.5, 1.8])
+
+titulo("Responsabilidades y opiniones", 2)
+parrafo(f"El enunciado pide consolidar las responsabilidades y las opiniones de los integrantes (Politécnico Grancolombiano, s. f.). La Tabla "
+        f"{sig('tab')} las reúne. Las responsabilidades de Carlos Fernando Guerra Arango salen del historial de Git, en el que todos los commits "
+        "están registrados con su usuario; las de los demás integrantes y todas las opiniones las escribe cada persona. Según la consulta a la "
+        "API de GitHub del 19 de noviembre de 2026, el repositorio tiene, además de la cuenta propietaria, tres colaboradores con permiso de escritura.", keep=True)
+INTEGRANTES = ["Leonardo Espinosa Rivera", "Daniel Santiago Estupiñán Cruz", "Anyelo Brayan Galindo Delgado", "Jerlinson Fabián Ramos Galíndez"]
+filas_resp = [[n, f"[[COMPLETAR: responsabilidades de {n}]]", f"[[COMPLETAR: opinión de {n}]]"] for n in INTEGRANTES]
+filas_resp.append(["Carlos Fernando Guerra Arango",
+                   f"Autor de los {len(HISTORIAL)} commits del historial: la API y sus pruebas, los contenedores, la publicación en GitHub, "
+                   "Jenkins, Travis CI, GitHub Actions y el documento de las tres partes.",
+                   "[[COMPLETAR: opinión de Carlos Fernando Guerra Arango]]"])
+tabla("Responsabilidades y opiniones de los integrantes", ["Integrante", "Responsabilidades", "Opinión"], filas_resp, [1.5, 2.6, 2.4])
+
+titulo("Cómo reproducir la tercera parte", 2)
+parrafo(f"Para Travis CI se crea la cuenta, se conecta el repositorio con los pasos de la Tabla {TABLA_TRAVIS} y se sube un commit. Para "
+        "GitHub Actions basta con publicar la rama en GitHub: el flujo se ejecuta solo y su resultado se consulta en la pestaña Actions del "
+        "repositorio. Para revisar los archivos sin conectar nada se ejecuta python tools/validar_ci.py con los dos esquemas y, con Docker "
+        "Desktop en ejecución, python tools/simular_ci.py travis o python tools/simular_ci.py actions.")
+
 # ================================================================ CONCLUSIONES
 salto()
 titulo("Conclusiones", 1)
 parrafo("Se construyó una aplicación de dos contenedores, una API en Node.js y una base de datos PostgreSQL, que se ejecuta con un solo comando y que se comunica a través de una red definida por el proyecto. "
         "La comunicación se demostró con evidencia verificable: la red contiene a ambos contenedores, el nombre db se resuelve desde la API, y los datos que devuelve la API coinciden con los de la base de datos. "
         "Además, como el repositorio de GitHub guarda la definición de los contenedores y no las imágenes, cualquier integrante obtiene el mismo ambiente "
-        "a partir de una copia del repositorio y un solo comando, que es la conexión entre GitHub y Docker en la que se apoya la segunda parte y se apoyará la Entrega 3.")
+        "a partir de una copia del repositorio y un solo comando, que es la conexión entre GitHub y Docker en la que se apoyan la segunda y la tercera parte.")
 parrafo("El uso de healthcheck y depends_on con condición evita un error común de arranque, en el que la aplicación intenta conectarse antes de que la base de datos esté lista. El volumen asegura que los datos "
         "persistan, y la separación de configuración en .env permite publicar el proyecto sin exponer claves. El Dockerfile multietapa con usuario sin privilegios produce una imagen más pequeña y más segura.")
 parrafo("Las pruebas automatizadas, escritas en la primera parte para que pudieran ejecutarse desde cualquier herramienta, son las que ahora ejecuta "
@@ -885,15 +1287,40 @@ parrafo("Instalar Jenkins con Docker fue coherente con la primera parte: Jenkins
         "a partir de archivos del repositorio. Además, Jenkins se integra con Docker en dos niveles: ejecuta etapas dentro de contenedores y "
         "construye y levanta los contenedores de la aplicación.")
 parrafo("Como limitaciones, Jenkins corre en un equipo local que no es accesible desde internet, por lo que no puede recibir avisos de GitHub y "
-        "revisa el repositorio cada dos minutos; la rama de esta entrega se leyó de una copia local mientras no estaba publicada en GitHub; y la "
-        "instalación tiene un solo nodo. Travis CI y Codeship, que completan la integración del proyecto, corresponden a la Entrega 3.")
+        "revisa el repositorio cada dos minutos; la rama de la Entrega 2 se leyó de una copia local mientras no estaba publicada en GitHub; y la "
+        "instalación tiene un solo nodo.")
+parrafo("En la tercera parte, la misma secuencia de verificación quedó escrita para dos servicios en la nube, Travis CI y GitHub Actions, "
+        "sin cambiar una línea de la aplicación, del Dockerfile ni del docker-compose.yml. Eso confirma la idea que guió el proyecto desde la "
+        "primera parte: si el ambiente es reproducible con contenedores y las pruebas no dependen de una herramienta, pasar de una herramienta "
+        "de integración continua a otra consiste en traducir unas pocas etapas a otro archivo de configuración.")
+parrafo("El caso de Codeship dejó una lección práctica: los servicios de integración continua en la nube cambian sus planes y pueden "
+        "desaparecer, así que antes de comprometer el proyecto con uno conviene revisar su estado en la fuente oficial. Cuando una herramienta "
+        "ya no existe o exige pagar, la indicación del tutor de buscar una alternativa libre que cumpla la misma función permitió cumplir el "
+        "objetivo: el proyecto queda integrado con contenedores, Jenkins, Travis CI y un reemplazo fiel de Codeship, todos con las mismas etapas.")
+parrafo("Como limitaciones de la tercera parte, la ejecución en Travis CI depende de que el grupo active una cuenta con créditos, y la de "
+        "GitHub Actions, de que se publique la rama en GitHub; mientras tanto, la evidencia de ejecución de las dos configuraciones es la "
+        "ejecución de sus comandos en el equipo del proyecto.")
 # Párrafo del grupo (experiencia y distribución del trabajo): lo escribe el grupo y va aquí. Si no llega antes del
 # cierre, se omite y la sección queda completa sin él.
 
 # ================================================================ REFERENCIAS
 salto()
 titulo("Referencias", 1)
+WB = "https://web.archive.org/web/"
+CB_DOCS = "https://docs.cloudbees.com/docs/cloudbees-codeship/latest/"
+R19 = "Recuperado el 19 de noviembre de 2026, de "
 REF = [
+    f"CloudBees. (s. f.-a). *CloudBees CodeShip Free - EOL*. CloudBees Docs. {R19}{WB}20250528223552/{CB_DOCS}general-account/free-eol",
+    f"CloudBees. (s. f.-b). *CloudBees CodeShip product end-of-life announcement*. CloudBees Docs. {R19}https://docs.cloudbees.com/docs/cloudbees-common/latest/cloudbees-codeship-eol",
+    f"CloudBees. (s. f.-c). *CloudBees CodeShip retirement FAQ*. CloudBees Docs. {R19}{WB}20251206050201/{CB_DOCS}r4-finalization/faq",
+    f"CloudBees. (s. f.-d). *CloudBees Unify is the control plane for your enterprise software factory*. {R19}https://www.cloudbees.com/unify",
+    f"CloudBees. (s. f.-e). *Display GitHub Actions workflows and runs*. CloudBees Unify Docs. {R19}https://docs.cloudbees.com/docs/cloudbees-unify/latest/continuous-integration/how-to-guides/display-github-actions-workflows",
+    f"CloudBees. (s. f.-f). *Executive summary* [CloudBees CodeShip retirement]. CloudBees Docs. {R19}{WB}20251203162638/{CB_DOCS}r1-codeship-retirement/",
+    f"CloudBees. (s. f.-g). *Get a custom CloudBees Unify pricing quote*. {R19}https://www.cloudbees.com/pricing",
+    f"CloudBees. (s. f.-h). *Installing the Jet CLI*. CloudBees Docs. {R19}{WB}20251015113940/{CB_DOCS}pro-jet-cli/installation",
+    f"CloudBees. (s. f.-i). *Services configuration*. CloudBees Docs. {R19}{WB}20250612120933/{CB_DOCS}pro-builds-and-configuration/services",
+    f"CloudBees. (s. f.-j). *Steps configuration*. CloudBees Docs. {R19}{WB}20250602104044/{CB_DOCS}pro-builds-and-configuration/steps",
+    f"CloudBees. (s. f.-k). *Understanding workflows*. CloudBees Unify Docs. {R19}https://docs.cloudbees.com/docs/cloudbees-unify/latest/workflows/explanation/understanding-workflows",
     "Docker Inc. (s. f.-a). *Compose file reference*. Docker Docs. Recuperado el 5 de noviembre de 2026, de https://docs.docker.com/reference/compose-file/",
     "Docker Inc. (s. f.-b). *Docker Compose*. Docker Docs. Recuperado el 5 de noviembre de 2026, de https://docs.docker.com/compose/",
     "Docker Inc. (s. f.-c). *Dockerfile reference*. Docker Docs. Recuperado el 5 de noviembre de 2026, de https://docs.docker.com/reference/dockerfile/",
@@ -901,9 +1328,15 @@ REF = [
     "Docker Inc. (s. f.-e). *postgres: Official image*. Docker Hub. Recuperado el 5 de noviembre de 2026, de https://hub.docker.com/_/postgres",
     "Docker Inc. (s. f.-f). *Volumes*. Docker Docs. Recuperado el 5 de noviembre de 2026, de https://docs.docker.com/engine/storage/volumes/",
     "Express. (s. f.). *Express: Node.js web application framework*. Recuperado el 5 de noviembre de 2026, de https://expressjs.com/",
-    "GitHub. (s. f.-a). *Inviting collaborators to a personal repository*. GitHub Docs. Recuperado el 5 de noviembre de 2026, de "
+    f"GitHub. (s. f.-a). *Billing and usage* [GitHub Actions]. GitHub Docs. {R19}https://docs.github.com/en/actions/concepts/billing-and-usage",
+    f"GitHub. (s. f.-b). *Evaluate expressions in workflows and actions*. GitHub Docs. {R19}https://docs.github.com/en/actions/reference/workflows-and-actions/expressions",
+    f"GitHub. (s. f.-c). *GitHub Student Developer Pack*. GitHub Education. {R19}https://education.github.com/pack",
+    "GitHub. (s. f.-d). *Inviting collaborators to a personal repository*. GitHub Docs. Recuperado el 5 de noviembre de 2026, de "
     "https://docs.github.com/en/account-and-profile/setting-up-and-managing-your-personal-account-on-github/managing-access-to-your-personal-repositories/inviting-collaborators-to-a-personal-repository",
-    "GitHub. (s. f.-b). *Repositories documentation*. GitHub Docs. Recuperado el 5 de noviembre de 2026, de https://docs.github.com/en/repositories",
+    "GitHub. (s. f.-e). *Repositories documentation*. GitHub Docs. Recuperado el 5 de noviembre de 2026, de https://docs.github.com/en/repositories",
+    f"GitHub. (s. f.-f). *Workflow syntax for GitHub Actions*. GitHub Docs. {R19}https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax",
+    f"GitHub. (2026). *Ubuntu 24.04* [Documentación de la imagen del ejecutor, versión 20261111.370.1]. Repositorio actions/runner-images. {R19}"
+    "https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md",
     "Jenkins. (s. f.-a). *Docker*. Jenkins User Documentation: Installing Jenkins. Recuperado el 17 de noviembre de 2026, de https://www.jenkins.io/doc/book/installing/docker/",
     "Jenkins. (s. f.-b). *Git*. Jenkins Plugins. Recuperado el 17 de noviembre de 2026, de https://plugins.jenkins.io/git/",
     "Jenkins. (s. f.-c). *Jenkins: Build great things at any scale*. Recuperado el 17 de noviembre de 2026, de https://www.jenkins.io/",
@@ -916,6 +1349,19 @@ REF = [
     "módulo Énfasis Profesional I (Integración Continua)]. Institución Universitaria Politécnico Grancolombiano.",
     "PostgreSQL Global Development Group. (s. f.). *PostgreSQL 16 documentation*. Recuperado el 5 de noviembre de 2026, de https://www.postgresql.org/docs/16/",
     "Reyes Corredor, E. (2026, 19 y 26 de octubre, y 5 y 9 de noviembre). *Encuentros sincrónicos de Énfasis Profesional I (Integración Continua)* [Grabaciones de clase]. Politécnico Grancolombiano.",
+    f"rhysd. (2026). *actionlint* (versión 1.7.12) [Software]. GitHub. {R19}https://github.com/rhysd/actionlint",
+    f"SchemaStore. (s. f.). *github-workflow.json* [Esquema JSON de los flujos de GitHub Actions]. {R19}https://json.schemastore.org/github-workflow.json",
+    f"Travis CI. (s. f.-a). *Billing FAQ*. Travis CI Docs. {R19}https://docs.travis-ci.com/user/billing-faq/",
+    f"Travis CI. (s. f.-b). *Billing overview*. Travis CI Docs. {R19}https://docs.travis-ci.com/user/billing-overview/",
+    f"Travis CI. (s. f.-c). *Build a JavaScript and Node.js project*. Travis CI Docs. {R19}https://docs.travis-ci.com/user/languages/javascript-with-nodejs/",
+    f"Travis CI. (s. f.-d). *Build config validation*. Travis CI Docs. {R19}https://docs.travis-ci.com/user/build-config-validation/",
+    f"Travis CI. (s. f.-e). *Build stages*. Travis CI Docs. {R19}https://docs.travis-ci.com/user/build-stages/",
+    f"Travis CI. (s. f.-f). *CI/CD pricing plans for any need*. {R19}https://www.travis-ci.com/pricing/",
+    f"Travis CI. (s. f.-g). *Job lifecycle*. Travis CI Docs. {R19}https://docs.travis-ci.com/user/job-lifecycle/",
+    f"Travis CI. (s. f.-h). *Travis CI onboarding*. Travis CI Docs. {R19}https://docs.travis-ci.com/user/onboarding/",
+    f"Travis CI. (s. f.-i). *The Ubuntu 24.04 (Noble Numbat) build environment*. Travis CI Docs. {R19}https://docs.travis-ci.com/user/reference/noble/",
+    f"Travis CI. (s. f.-j). *Use Docker in builds*. Travis CI Docs. {R19}https://docs.travis-ci.com/user/docker/",
+    f"Travis CI. (2026). *travis-yml* [Repositorio con el esquema JSON de la configuración de Travis CI]. GitHub. {R19}https://github.com/travis-ci/travis-yml",
 ]
 for r in REF:
     p = doc.add_paragraph()

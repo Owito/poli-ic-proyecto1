@@ -1,0 +1,23 @@
+$ python tools/validar_ci.py $ESQ/schema.json $ESQ/github-workflow.json
+OK    YAML válido: .travis.yml
+OK    YAML válido: .github/workflows/integracion-continua.yml
+OK    Esquema oficial de Travis CI (travis-ci/travis-yml)
+OK    Esquema de flujos de GitHub Actions (SchemaStore)
+OK    Travis: etapas en orden: ['pruebas unitarias', 'contenedores']
+OK    GitHub Actions: contenedores espera a pruebas-unitarias
+OK    Travis: contiene los pasos del Jenkinsfile
+OK    GitHub Actions: contiene los pasos del Jenkinsfile
+OK    GitHub Actions: la limpieza corre siempre
+OK    Ninguna clave escrita en los archivos
+Total de fallas: 0
+$ docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12 -color=false -verbose && echo "actionlint: sin errores"
+verbose: Linting all workflow files in repository: /repo
+verbose: Detected project: /repo
+verbose: Collected 1 YAML files
+verbose: Linting .github/workflows/integracion-continua.yml
+verbose: Using project at /repo
+verbose: Found 0 parse errors in 0 ms for .github/workflows/integracion-continua.yml
+verbose: Found total 0 errors in 11 ms for .github/workflows/integracion-continua.yml
+actionlint: sin errores
+$ python tools/validar_ci.py --comandos-travis | docker run --rm -i --entrypoint shellcheck rhysd/actionlint:1.7.12 --norc -s bash - && echo "ShellCheck: sin hallazgos"
+ShellCheck: sin hallazgos

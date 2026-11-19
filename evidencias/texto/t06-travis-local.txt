@@ -1,0 +1,58 @@
+$ python tools/simular_ci.py travis "pruebas unitarias"
+===== Travis CI, etapa «pruebas unitarias»: Instalar dependencias y pruebas unitarias
+$ npm ci --no-audit --no-fund
+added 82 packages in 2s
+$ node --version && npm --version
+v22.23.2
+11.1.0
+$ timeout 180 npm test
+[...]
+# tests 5
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 1
+# todo 0
+[...]
+== resultado de la etapa: passed
+(código de salida: 0)
+$ python tools/simular_ci.py travis contenedores
+===== Travis CI, etapa «contenedores»: Imagen de la API, dos contenedores, /salud y pruebas de integración
+$ docker --version
+Docker version 29.5.2, build 79eb04c
+$ docker compose version || { mkdir -p ~/.docker/cli-plugins && ln -sf "$(command -v docker-compose)" ~/.docker/cli-plugins/docker-compose && docker compose version; }
+Docker Compose version v5.1.3
+$ printf 'POSTGRES_USER=tareas_user\nPOSTGRES_PASSWORD=%s\nPOSTGRES_DB=tareas\nAPP_PUERTO=%s\n' "${CLAVE_DB:-$(openssl rand -hex 16)}" "$APP_PUERTO" > .env
+$ docker compose build app
+[...]
+ Image tareas-ci-app Built 
+$ docker compose up -d --wait
+[...]
+ Container tareas-db Healthy 
+[...]
+ Container tareas-app Healthy 
+ Container tareas-db Healthy 
+$ docker compose ps
+NAME         IMAGE                COMMAND                  SERVICE   CREATED         STATUS                   PORTS
+tareas-app   tareas-ci-app        "docker-entrypoint.s…"   app       7 seconds ago   Up Less than a second    0.0.0.0:8095->3000/tcp, [::]:8095->3000/tcp
+tareas-db    postgres:16-alpine   "docker-entrypoint.s…"   db        7 seconds ago   Up 6 seconds (healthy)   5432/tcp
+$ curl -fsS --retry 10 --retry-connrefused --retry-delay 2 "http://localhost:${APP_PUERTO}/salud"
+{"estado":"ok","base_de_datos":"tareas","version":"PostgreSQL 16.14 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit","hora_bd":"2026-11-19T10:24:12.466Z"}
+$ docker compose exec -T app npm test
+[...]
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+[...]
+$ docker compose down -v --remove-orphans
+[...]
+ Volume tareas-ci_tareas-datos Removed 
+ Network tareas-ci_red-tareas Removed 
+$ rm -f .env
+== resultado de la etapa: passed
+(código de salida: 0)
