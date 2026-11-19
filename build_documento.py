@@ -954,14 +954,14 @@ parrafo(f"Los servicios de integración continua en la nube cambian sus planes c
         f"lo encontrado y las Figuras {sig('fig')}, {sig('fig') + 1} y {sig('fig') + 2} muestran las fuentes.")
 tabla("Estado de los servicios verificado el 19 de noviembre de 2026", ["Servicio", "Qué se encontró", "Consecuencia para el proyecto"], [
     ["Travis CI",
-     f"Sigue en operación. Los planes publicados son de pago, desde 15 dólares al mes por 35.000 créditos de Linux ({tr('precios')}). "
+     f"Sigue en operación. Los planes publicados son de pago; el más económico, Usage Based, cuesta 15 dólares al mes por 35.000 créditos de Linux, o 13,75 dólares al mes con pago anual ({tr('precios')}). "
      f"La documentación de facturación indica que la prueba gratuita no está disponible por ahora y que un minuto de Linux cuesta 10 "
      f"créditos ({tr('facturacion')}). Ofrece créditos para código abierto, solo para repositorios públicos, que se solicitan al soporte "
      f"({tr('faq')}), y el GitHub Student Developer Pack incluye compilaciones privadas gratuitas de Travis CI mientras se es estudiante ({gh('pack')}).",
      "Se puede integrar. El archivo .travis.yml queda listo y validado; para ejecutarlo en la nube, la cuenta de Travis CI necesita créditos por una de esas vías."],
     ["Codeship",
      f"CloudBees dejó de dar soporte a CodeShip en enero de 2026 y recomienda migrar a CloudBees Unify ({cb('aviso')}); el retiro definitivo "
-     f"estaba anunciado para el 31 de enero de 2026 ({cb('resumen')}). El plan gratuito se había eliminado el 1 de marzo de 2023 ({cb('free')}). "
+     f"estaba anunciado para el 31 de enero de 2026 ({cb('resumen')}). Antes, CloudBees había anunciado el retiro del plan gratuito para el 1 de marzo de 2023 ({cb('free')}). "
      "Su aplicación, app.codeship.com, redirige al aviso de fin de vida.",
      "No se puede integrar, porque el servicio ya no existe. Se reemplaza por una herramienta equivalente."],
     ["CloudBees Unify",
@@ -981,9 +981,9 @@ figura("t02-codeship-fin-de-vida.png", "Aviso de fin de vida de CloudBees CodeSh
        "La dirección de la documentación de CodeShip ya no muestra la documentación del producto: redirige a esta página, en la que "
        "CloudBees anuncia que desde enero de 2026 no da soporte a CloudBees CodeShip y recomienda migrar a CloudBees Unify.", ancho=4.6)
 figura("t03-codeship-cierre.png", "Comprobación del cierre de Codeship desde la terminal",
-       "La primera consulta pide la aplicación de Codeship, app.codeship.com, donde se configuraban los proyectos, y el servidor responde con "
-       "una redirección permanente (301) hacia el aviso de fin de vida. La segunda hace lo mismo con la documentación y la tercera confirma "
-       "el texto del aviso. La última pide el instalador de Jet, la herramienta de línea de comandos con la que CodeShip Pro permitía "
+       "Después de la fecha y la hora de la consulta, el primer curl pide la aplicación de Codeship, app.codeship.com, donde se configuraban "
+       "los proyectos, y el servidor responde con una redirección permanente (301) hacia el aviso de fin de vida. El segundo hace lo mismo con "
+       "la documentación y el tercero confirma el texto del aviso. El último pide el instalador de Jet, la herramienta de línea de comandos con la que CodeShip Pro permitía "
        f"ejecutar su configuración en el equipo local ({cb('jet')}), y el servidor responde 403 Forbidden: tampoco hay una forma local de "
        "ejecutar una configuración de Codeship.")
 
@@ -1078,8 +1078,8 @@ parrafo(f"CodeShip era el servicio de integración continua en la nube de CloudB
 titulo("Por qué no se puede integrar", 3)
 parrafo(f"Codeship ya no existe como servicio. CloudBees anunció que lo descontinuaría el 31 de enero de 2026 y que después de esa fecha "
         f"quedaría inaccesible ({cb('resumen')}), y hoy su documentación y su aplicación redirigen al aviso de fin de vida (Figuras "
-        f"{F('t02-codeship-fin-de-vida')} y {F('t03-codeship-cierre')}). Además, el plan gratuito se había eliminado el 1 de marzo de 2023 y el "
-        f"programa para código abierto estaba cerrado ({cb('free')}), y el instalador de Jet ya no se puede descargar. Por lo tanto, no hay forma "
+        f"{F('t02-codeship-fin-de-vida')} y {F('t03-codeship-cierre')}). Además, CloudBees había anunciado el retiro del plan gratuito para el "
+        f"1 de marzo de 2023 y tenía cerrado su programa para código abierto ({cb('free')}), y el instalador de Jet ya no se puede descargar. Por lo tanto, no hay forma "
         "de crear una cuenta ni de ejecutar una configuración de Codeship, ni en la nube ni en el equipo local. Escribir los archivos "
         "codeship-services.yml y codeship-steps.yml habría dejado en el repositorio una configuración que nadie puede ejecutar, así que no se agregaron.")
 titulo("Elección del reemplazo", 3)
@@ -1126,8 +1126,8 @@ parrafo(f"Un flujo de trabajo es un proceso automatizado configurable, formado p
         f"en la carpeta .github/workflows del repositorio ({gh('sintaxis')}). El Listado {sig('lis')} contiene el flujo del proyecto.", keep=True)
 listado("Archivo .github/workflows/integracion-continua.yml", r".github\workflows\integracion-continua.yml")
 parrafo(f"**on** indica cuándo se ejecuta: con cada push a cualquier rama, con cada pull request y a mano (workflow_dispatch); el disparador "
-        f"manual solo funciona cuando el archivo ya está en la rama por defecto, main ({gh('sintaxis')}). **permissions** limita el token del "
-        f"flujo a leer el contenido del repositorio, porque el flujo no necesita escribir nada. **concurrency** agrupa las ejecuciones de una "
+        f"manual solo funciona cuando el archivo ya está en la rama por defecto, main ({gh('sintaxis')}). **permissions** limita el acceso del "
+        f"token GITHUB_TOKEN a leer el contenido del repositorio ({gh('sintaxis')}), porque el flujo no necesita escribir nada. **concurrency** agrupa las ejecuciones de una "
         f"misma rama y, con cancel-in-progress, cancela la que esté en curso cuando llega un commit nuevo ({gh('sintaxis')}).")
 parrafo(f"El job **pruebas-unitarias** corre en un ejecutor ubuntu-24.04, descarga el código con actions/checkout y ejecuta npm ci y npm test "
         f"dentro de un contenedor node:22-alpine, igual que la etapa de Jenkins, con un tiempo límite de tres minutos. El job **contenedores** "
@@ -1192,8 +1192,8 @@ parrafo("Tres observaciones ayudan a leerlo. Los commits del 8 de noviembre con 
         "de cambio (pull requests) integradas en la rama main desde GitHub; la solicitud #4, que completa un nombre en la portada, seguía "
         "abierta en la consulta a GitHub del 19 de noviembre de 2026. Los commits d06d969, 25bcac6 y 53d6fe3 son la prueba de la segunda "
         "parte: el error introducido a propósito, la corrección de las pruebas y del pipeline, y la reversión. Y los nombres de autor "
-        f"{' y '.join(autores)} corresponden a la misma dirección de correo en Git, la de Carlos Fernando Guerra Arango. El commit que agrega "
-        "este documento se registra después de generarlo, por eso no aparece en la tabla. El historial de ejecuciones de Jenkins está en "
+        f"{' y '.join(autores)} corresponden a la misma dirección de correo en Git, la de Carlos Fernando Guerra Arango. Los commits que se "
+        "hagan después de generar el documento no aparecen en la tabla. El historial de ejecuciones de Jenkins está en "
         "la Tabla 8 de la segunda parte.")
 
 titulo("Sugerencias para la solución de problemas", 2)
@@ -1229,7 +1229,7 @@ tabla("Problemas encontrados, causas, soluciones y sugerencias", ["Problema", "C
      "La configuración quedó lista y validada en el equipo, a la espera de la cuenta.",
      "Pedir al soporte créditos para código abierto o el plan del GitHub Student Developer Pack antes de considerar un plan de pago."],
     ["Codeship no se puede usar.",
-     f"CloudBees lo retiró el 31 de enero de 2026 ({cb('resumen')}); ni la aplicación ni Jet están disponibles.",
+     f"CloudBees anunció su retiro definitivo para el 31 de enero de 2026 ({cb('resumen')}); hoy ni la aplicación ni Jet están disponibles.",
      "Reemplazo por GitHub Actions, con las mismas etapas.",
      "Antes de planear el uso de una herramienta, revisar su estado en la documentación oficial."],
     ["El esquema de Travis CI aceptó errores introducidos a propósito.",
@@ -1295,7 +1295,7 @@ parrafo("En la tercera parte, la misma secuencia de verificación quedó escrita
         "de integración continua a otra consiste en traducir unas pocas etapas a otro archivo de configuración.")
 parrafo("El caso de Codeship dejó una lección práctica: los servicios de integración continua en la nube cambian sus planes y pueden "
         "desaparecer, así que antes de comprometer el proyecto con uno conviene revisar su estado en la fuente oficial. Cuando una herramienta "
-        "ya no existe o exige pagar, la indicación del tutor de buscar una alternativa libre que cumpla la misma función permitió cumplir el "
+        "ya no existe o exige pagar, la indicación del tutor de buscar una alternativa libre o gratuita que cumpla la misma función permitió cumplir el "
         "objetivo: el proyecto queda integrado con contenedores, Jenkins, Travis CI y un reemplazo fiel de Codeship, todos con las mismas etapas.")
 parrafo("Como limitaciones de la tercera parte, la ejecución en Travis CI depende de que el grupo active una cuenta con créditos, y la de "
         "GitHub Actions, de que se publique la rama en GitHub; mientras tanto, la evidencia de ejecución de las dos configuraciones es la "
