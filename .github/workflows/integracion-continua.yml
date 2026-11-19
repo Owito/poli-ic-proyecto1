@@ -1,0 +1,68 @@
+# Integración continua con GitHub Actions (Entrega 3), en reemplazo de Codeship: CloudBees retiró CodeShip el
+# 31 de enero de 2026. Corre lo mismo que el Jenkinsfile y que .travis.yml: las pruebas unitarias dentro de un
+# contenedor node:22-alpine y, solo si pasan, la imagen de la API, los dos contenedores, /salud y las pruebas de integración.
+name: Integración continua
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ic-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pruebas-unitarias:
+    name: Instalar dependencias y pruebas unitarias
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Descargar código
+        uses: actions/checkout@v7
+
+      # Igual que la etapa de Jenkins: Node.js no se instala en la máquina, la etapa corre dentro de node:22-alpine.
+      - name: Pruebas unitarias dentro de node:22-alpine
+        timeout-minutes: 3
+        run: |
+          docker run --rm -v "$PWD:/app" -w /app node:22-alpine sh -c \
+            "node --version && npm --version && npm ci --no-audit --no-fund && npm test"
+
+  contenedores:
+    name: Imagen, dos contenedores, /salud y pruebas de integración
+    needs: pruebas-unitarias
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      COMPOSE_PROJECT_NAME: tareas-ci
+      APP_PUERTO: "8095"
+    steps:
+      - name: Descargar código
+        uses: actions/checkout@v7
+
+      # La base de datos solo existe dentro de la máquina de la ejecución: la clave se genera al azar y se borra al final.
+      - name: Archivo .env con una clave de un solo uso
+        run: printf 'POSTGRES_USER=tareas_user\nPOSTGRES_PASSWORD=%s\nPOSTGRES_DB=tareas\nAPP_PUERTO=%s\n' "$(openssl rand -hex 16)" "$APP_PUERTO" > .env
+
+      - name: Construir la imagen de la API
+        run: docker compose build app
+
+      - name: Levantar los dos contenedores
+        run: |
+          docker compose up -d --wait
+          docker compose ps
+
+      - name: Verificar /salud
+        run: curl -fsS --retry 10 --retry-connrefused --retry-delay 2 "http://localhost:${APP_PUERTO}/salud"
+
+      - name: Pruebas de integración
+        run: docker compose exec -T app npm test
+
+      - name: Bajar los contenedores y borrar el .env
+        if: always()
+        run: |
+          docker compose down -v --remove-orphans
+          rm -f .env

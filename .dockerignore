@@ -9,3 +9,5 @@ docs
 .npm-cache
 jenkins
 Jenkinsfile
+.travis.yml
+.github

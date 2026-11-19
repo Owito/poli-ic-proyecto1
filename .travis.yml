@@ -1,0 +1,41 @@
+# Integración continua con Travis CI (Entrega 3).
+# Hace lo mismo que el Jenkinsfile, en dos etapas que Travis ejecuta una después de la otra, cada una en una máquina
+# virtual nueva. Si la primera falla, Travis cancela la segunda: no se construye ni se levanta código que no pasa sus pruebas.
+version: ~> 1.0
+os: linux
+dist: noble
+language: node_js
+node_js: "22"
+
+jobs:
+  include:
+    - stage: pruebas unitarias
+      name: Instalar dependencias y pruebas unitarias
+      install: npm ci --no-audit --no-fund
+      script:
+        - node --version && npm --version
+        # Tiempo límite de tres minutos, la lección de la ejecución 2 de Jenkins (una prueba que no termina).
+        - timeout 180 npm test
+
+    - stage: contenedores
+      name: Imagen de la API, dos contenedores, /salud y pruebas de integración
+      services:
+        - docker
+      env: COMPOSE_PROJECT_NAME=tareas-ci APP_PUERTO=8095
+      install: skip
+      before_script:
+        - docker --version
+        # Travis trae docker-compose 2.x; si el subcomando "docker compose" no existe, se enlaza como complemento.
+        - docker compose version || { mkdir -p ~/.docker/cli-plugins && ln -sf "$(command -v docker-compose)" ~/.docker/cli-plugins/docker-compose && docker compose version; }
+        # La base de datos solo existe dentro de esta máquina virtual. Si el repositorio no define la variable CLAVE_DB
+        # en la configuración de Travis, la clave se genera al azar en cada ejecución y nunca queda escrita en el repositorio.
+        - printf 'POSTGRES_USER=tareas_user\nPOSTGRES_PASSWORD=%s\nPOSTGRES_DB=tareas\nAPP_PUERTO=%s\n' "${CLAVE_DB:-$(openssl rand -hex 16)}" "$APP_PUERTO" > .env
+        - docker compose build app
+        - docker compose up -d --wait
+        - docker compose ps
+      script:
+        - curl -fsS --retry 10 --retry-connrefused --retry-delay 2 "http://localhost:${APP_PUERTO}/salud"
+        - docker compose exec -T app npm test
+      after_script:
+        - docker compose down -v --remove-orphans
+        - rm -f .env
