@@ -821,11 +821,12 @@ parrafo(f"La Tabla {sig('tab')} resume las ejecuciones del trabajo tareas-equipo
         "equivale al botón Build Now; las demás las lanzó Jenkins solo, al encontrar commits nuevos en la rama. Los datos salen de la consola y "
         "de la API de cada ejecución.", keep=True)
 tabla("Ejecuciones del trabajo tareas-equipo", ["N.º", "Cómo se inició", "Commit probado", "Resultado", "Duración", "Qué mostró"], [
-    ["1", "A mano", "35489a5, el Jenkinsfile", "SUCCESS", "1 min 5 s", "El pipeline completo funciona; la primera vez descarga la imagen de Node.js."],
-    ["2", "Cambio en el repositorio", "d06d969, error introducido a propósito", "ABORTED", "7 min 6 s", "La prueba falló, pero la ejecución no terminaba; se abortó a mano."],
-    ["3", "Cambio en el repositorio", "25bcac6, pruebas y tiempo límite corregidos", "FAILURE", "7,8 s", "El error sigue y el pipeline se detiene en las pruebas unitarias."],
-    ["4", "Cambio en el repositorio", "53d6fe3, revierte el error", "SUCCESS", "19 s", "Todo en verde otra vez."],
+    ["1", "A mano", "50c76c4, el Jenkinsfile", "SUCCESS", "1 min 5 s", "El pipeline completo funciona; la primera vez descarga la imagen de Node.js."],
+    ["2", "Cambio en el repositorio", "335a28e, error introducido a propósito", "ABORTED", "7 min 6 s", "La prueba falló, pero la ejecución no terminaba; se abortó a mano."],
+    ["3", "Cambio en el repositorio", "34592c9, pruebas y tiempo límite corregidos", "FAILURE", "7,8 s", "El error sigue y el pipeline se detiene en las pruebas unitarias."],
+    ["4", "Cambio en el repositorio", "8e708a8, revierte el error", "SUCCESS", "19 s", "Todo en verde otra vez."],
 ], [0.4, 1.0, 1.5, 0.9, 0.8, 1.9])
+parrafo("Los identificadores de commit de esta sección son los de la rama publicada en GitHub. Antes de publicarla se ajustaron los mensajes de sus commits, sin cambiar el código, y por eso cambiaron sus identificadores. Las consolas y las capturas de Jenkins conservan los que tenían en la copia local del repositorio: 50c76c4 aparece allí como 35489a5, 335a28e como d06d969, 34592c9 como 25bcac6 y 8e708a8 como 53d6fe3.")
 titulo("Una ejecución completa en verde", 3)
 parrafo(f"La Figura {sig('fig')} muestra las etapas de la ejecución 4 y la Figura {sig('fig') + 1} las líneas clave de su consola.", keep=True)
 figura("j15-etapas-verde.png", "Etapas de la ejecución 4 en verde",
@@ -841,15 +842,15 @@ titulo("Ejecución automática ante un cambio", 3)
 parrafo("Para comprobar el disparador, se hizo un commit en la rama y se subió a la copia del repositorio que lee Jenkins (Figura "
         f"{sig('fig')}). Sin que nadie entrara a Jenkins, en la siguiente revisión del repositorio apareció la ejecución 2, iniciada por el cambio.", keep=True)
 figura("j13-espejo.png", "Envío de un commit a la rama que vigila Jenkins",
-       "git push envía el commit d06d969 a la copia local del repositorio; git ls-remote confirma que la rama apunta a ese commit. Desde ese "
+       "git push envía el commit 335a28e a la copia local del repositorio; git ls-remote confirma que la rama apunta a ese commit. Desde ese "
        "momento, la próxima revisión de pollSCM encuentra un commit que no se ha construido y lanza el pipeline.")
 titulo("El pipeline detiene la integración cuando una prueba falla", 3)
-parrafo("El commit d06d969 se hizo a propósito para comprobar que Jenkins detecta errores: cambia la API para que una tarea sin título reciba un "
+parrafo("El commit 335a28e se hizo a propósito para comprobar que Jenkins detecta errores: cambia la API para que una tarea sin título reciba un "
         "título por defecto, lo que rompe la regla de negocio de que el título es obligatorio. La prueba unitaria POST /tareas sin titulo espera "
         "la respuesta HTTP 400 y, con el cambio, recibió 500.")
 parrafo("En la ejecución 2, Jenkins detectó el fallo, pero la ejecución no terminó: la prueba fallida dejaba abierto el servidor de prueba, porque "
         "la instrucción que lo cerraba estaba después de la aserción y nunca se ejecutaba, y Node.js se quedaba esperando. Tras siete minutos se "
-        "abortó a mano. El hallazgo llevó a dos correcciones en el commit 25bcac6: las pruebas cierran el servidor con t.after(), que se ejecuta "
+        "abortó a mano. El hallazgo llevó a dos correcciones en el commit 34592c9: las pruebas cierran el servidor con t.after(), que se ejecuta "
         "aunque la prueba falle, y el Jenkinsfile tiene ahora un tiempo límite general de quince minutos y uno de tres minutos para las pruebas "
         f"unitarias. Con eso, la ejecución 3 terminó en rojo en 7,8 segundos (Figuras {sig('fig')} y {sig('fig') + 1}).")
 figura("j17-etapas-rojo.png", "Etapas de la ejecución 3: falla en las pruebas unitarias",
@@ -859,7 +860,7 @@ figura("j17-etapas-rojo.png", "Etapas de la ejecución 3: falla en las pruebas u
 figura("j22-consola-rojo.png", "Consola de la ejecución 3",
        "La prueba 1 reporta not ok, con el valor esperado, 400, y el obtenido, 500. Después, cada etapa siguiente aparece como skipped due to "
        "earlier failure(s), se imprime el mensaje de falla definido en post y la ejecución termina con Finished: FAILURE.")
-parrafo(f"Finalmente se revirtió el commit con el error (commit 53d6fe3) y la ejecución 4 volvió a quedar en verde. La Figura {sig('fig')} "
+parrafo(f"Finalmente se revirtió el commit con el error (commit 8e708a8) y la ejecución 4 volvió a quedar en verde. La Figura {sig('fig')} "
         "muestra las cuatro ejecuciones, etapa por etapa.", keep=True)
 figura("j20-etapas-historial.png", "Historial de ejecuciones por etapa",
        "Cada fila es una ejecución y cada círculo una etapa: el primero es la descarga del Jenkinsfile, siguen las seis etapas en el orden del "
@@ -1190,7 +1191,7 @@ tabla("Historial de commits del repositorio", ["N.º", "Commit", "Fecha", "Autor
       [0.35, 0.7, 0.9, 0.85, 0.45, 2.65, 0.6])
 parrafo("Tres observaciones ayudan a leerlo. Los commits del 8 de noviembre con un número entre paréntesis, de (#1) a (#3), son solicitudes "
         "de cambio (pull requests) integradas en la rama main desde GitHub; la solicitud #4, que completa un nombre en la portada, seguía "
-        "abierta en la consulta a GitHub del 19 de noviembre de 2026. Los commits d06d969, 25bcac6 y 53d6fe3 son la prueba de la segunda "
+        "abierta en la consulta a GitHub del 19 de noviembre de 2026. Los commits 335a28e, 34592c9 y 8e708a8 son la prueba de la segunda "
         "parte: el error introducido a propósito, la corrección de las pruebas y del pipeline, y la reversión. Y los nombres de autor "
         f"{' y '.join(autores)} corresponden a la misma dirección de correo en Git, la de Carlos Fernando Guerra Arango. Los commits que se "
         "hagan después de generar el documento no aparecen en la tabla. El historial de ejecuciones de Jenkins está en "
@@ -1203,11 +1204,11 @@ parrafo(f"La Tabla {sig('tab')} reúne los problemas que aparecieron durante las
 tabla("Problemas encontrados, causas, soluciones y sugerencias", ["Problema", "Causa", "Solución aplicada", "Sugerencia"], [
     ["La ejecución 2 de Jenkins quedó esperando siete minutos y hubo que abortarla.",
      "La prueba que falló dejaba abierto el servidor de prueba: la instrucción que lo cerraba estaba después de la aserción.",
-     "Commit 25bcac6: cierre con t.after() y tiempos límite en el Jenkinsfile.",
+     "Commit 34592c9: cierre con t.after() y tiempos límite en el Jenkinsfile.",
      "Liberar los recursos de cada prueba en t.after() o en finally y poner tiempo límite a cada etapa; Travis CI y GitHub Actions ya lo tienen."],
     ["La ejecución 3 de Jenkins terminó en rojo en las pruebas unitarias.",
-     "El commit d06d969 rompió a propósito la regla del título obligatorio: la API respondía 500 donde la prueba esperaba 400.",
-     "Commit 53d6fe3, que revierte el cambio.",
+     "El commit 335a28e rompió a propósito la regla del título obligatorio: la API respondía 500 donde la prueba esperaba 400.",
+     "Commit 8e708a8, que revierte el cambio.",
      "Leer en la consola la línea not ok, con el valor esperado y el obtenido; si un cambio rompe una regla del negocio, revertirlo y corregirlo en un commit nuevo, sin desactivar la prueba."],
     ["El puerto 8080, el de Jenkins por defecto, estaba ocupado.", "Otra aplicación del equipo lo usaba.",
      "Jenkins se publicó en el 8181, un parámetro del script de instalación.",
