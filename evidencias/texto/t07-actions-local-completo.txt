@@ -1,0 +1,232 @@
+$ python tools/simular_ci.py actions
+
+===== GitHub Actions, job «pruebas-unitarias»: Instalar dependencias y pruebas unitarias
+
+-- paso «Descargar código» (actions/checkout@v7): omitido, el código ya está en la carpeta
+
+-- paso «Pruebas unitarias dentro de node:22-alpine»
+
+$ docker run --rm -v "$PWD:/app" -w /app node:22-alpine sh -c \
+  "node --version && npm --version && npm ci --no-audit --no-fund && npm test"
+v22.23.5
+10.9.9
+
+added 82 packages in 3s
+npm notice
+npm notice New major version of npm available! 10.9.9 -> 12.2.3
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.3
+npm notice To update run: npm install -g npm@12.2.3
+npm notice
+
+> tareas-equipo@1.0.0 test
+> node --test "tests/*.test.js"
+
+TAP version 13
+# Subtest: POST /tareas sin titulo responde 400
+ok 1 - POST /tareas sin titulo responde 400
+  ---
+  duration_ms: 169.895083
+  type: 'test'
+  ...
+# Subtest: GET /tareas con estado inválido responde 400
+ok 2 - GET /tareas con estado inválido responde 400
+  ---
+  duration_ms: 8.246289
+  type: 'test'
+  ...
+# Subtest: GET /tareas/:id inexistente responde 404
+ok 3 - GET /tareas/:id inexistente responde 404
+  ---
+  duration_ms: 4.628634
+  type: 'test'
+  ...
+# Subtest: GET /salud responde 503 si la BD falla
+ok 4 - GET /salud responde 503 si la BD falla
+  ---
+  duration_ms: 6.431656
+  type: 'test'
+  ...
+# Subtest: integración: salud, crear, leer, actualizar y borrar una tarea
+ok 5 - integración: salud, crear, leer, actualizar y borrar una tarea # SKIP sin DB_HOST: prueba de integración omitida
+  ---
+  duration_ms: 0.820034
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 1
+# todo 0
+# duration_ms 1542.832424
+== resultado del job: success
+
+===== GitHub Actions, job «contenedores»: Imagen, dos contenedores, /salud y pruebas de integración
+
+-- paso «Descargar código» (actions/checkout@v7): omitido, el código ya está en la carpeta
+
+-- paso «Archivo .env con una clave de un solo uso»
+
+$ printf 'POSTGRES_USER=tareas_user\nPOSTGRES_PASSWORD=%s\nPOSTGRES_DB=tareas\nAPP_PUERTO=%s\n' "$(openssl rand -hex 16)" "$APP_PUERTO" > .env
+
+-- paso «Construir la imagen de la API»
+
+$ docker compose build app
+ Image tareas-ci-app Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 641B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 506B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/node:22-alpine
+#3 DONE 0.0s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 139B done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 294B done
+#5 DONE 0.0s
+
+#6 [dependencias 1/4] FROM docker.io/library/node:22-alpine@sha256:1314fb30ec37592d5845e5a160d522c0e680972aa534549940b8d73bde88481a
+#6 resolve docker.io/library/node:22-alpine@sha256:1314fb30ec37592d5845e5a160d522c0e680972aa534549940b8d73bde88481a 0.0s done
+#6 DONE 0.0s
+
+#7 [stage-1 4/6] COPY package.json ./
+#7 CACHED
+
+#8 [dependencias 2/4] WORKDIR /app
+#8 CACHED
+
+#9 [dependencias 3/4] COPY package.json package-lock.json ./
+#9 CACHED
+
+#10 [stage-1 3/6] COPY --from=dependencias /app/node_modules ./node_modules
+#10 CACHED
+
+#11 [stage-1 5/6] COPY src ./src
+#11 CACHED
+
+#12 [dependencias 4/4] RUN npm ci --omit=dev
+#12 CACHED
+
+#13 [stage-1 6/6] COPY tests ./tests
+#13 CACHED
+
+#14 exporting to image
+#14 exporting layers done
+#14 exporting manifest sha256:dde87a588bb82207ea066fa316b0a09b5164e27f865e98e090fb83176b975a4a done
+#14 exporting config sha256:18fc1712ecb372b5c83a2ba9fd4ae528d63a0243f52dfc9f78e6965c970c4701 done
+#14 exporting attestation manifest sha256:285006f220797dc8e8292be69649e457c14de2de04640fa07f8a78131d105cf8 0.0s done
+#14 exporting manifest list sha256:c9514ea33c047f68971c3651d23b1ee94917ee596e2bca4d1ed30a819255892d 0.0s done
+#14 naming to docker.io/library/tareas-ci-app:latest
+#14 naming to docker.io/library/tareas-ci-app:latest done
+#14 unpacking to docker.io/library/tareas-ci-app:latest 0.0s done
+#14 DONE 0.1s
+
+#15 resolving provenance for metadata file
+#15 DONE 0.0s
+ Image tareas-ci-app Built 
+
+-- paso «Levantar los dos contenedores»
+
+$ docker compose up -d --wait
+docker compose ps
+ Network tareas-ci_red-tareas Creating 
+ Network tareas-ci_red-tareas Created 
+ Volume tareas-ci_tareas-datos Creating 
+ Volume tareas-ci_tareas-datos Created 
+ Container tareas-db Creating 
+ Container tareas-db Created 
+ Container tareas-app Creating 
+ Container tareas-app Created 
+ Container tareas-db Starting 
+ Container tareas-db Started 
+ Container tareas-db Waiting 
+ Container tareas-db Healthy 
+ Container tareas-app Starting 
+ Container tareas-app Started 
+ Container tareas-db Waiting 
+ Container tareas-app Waiting 
+ Container tareas-app Healthy 
+ Container tareas-db Healthy 
+NAME         IMAGE                COMMAND                  SERVICE   CREATED         STATUS                   PORTS
+tareas-app   tareas-ci-app        "docker-entrypoint.s…"   app       7 seconds ago   Up Less than a second    0.0.0.0:8095->3000/tcp, [::]:8095->3000/tcp
+tareas-db    postgres:16-alpine   "docker-entrypoint.s…"   db        7 seconds ago   Up 6 seconds (healthy)   5432/tcp
+
+-- paso «Verificar /salud»
+
+$ curl -fsS --retry 10 --retry-connrefused --retry-delay 2 "http://localhost:${APP_PUERTO}/salud"
+{"estado":"ok","base_de_datos":"tareas","version":"PostgreSQL 16.14 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit","hora_bd":"2026-11-19T10:24:47.419Z"}
+-- paso «Pruebas de integración»
+
+$ docker compose exec -T app npm test
+
+> tareas-equipo@1.0.0 test
+> node --test "tests/*.test.js"
+
+TAP version 13
+# Subtest: POST /tareas sin titulo responde 400
+ok 1 - POST /tareas sin titulo responde 400
+  ---
+  duration_ms: 56.658961
+  type: 'test'
+  ...
+# Subtest: GET /tareas con estado inválido responde 400
+ok 2 - GET /tareas con estado inválido responde 400
+  ---
+  duration_ms: 9.335212
+  type: 'test'
+  ...
+# Subtest: GET /tareas/:id inexistente responde 404
+ok 3 - GET /tareas/:id inexistente responde 404
+  ---
+  duration_ms: 5.015604
+  type: 'test'
+  ...
+# Subtest: GET /salud responde 503 si la BD falla
+ok 4 - GET /salud responde 503 si la BD falla
+  ---
+  duration_ms: 8.192845
+  type: 'test'
+  ...
+# Subtest: integración: salud, crear, leer, actualizar y borrar una tarea
+ok 5 - integración: salud, crear, leer, actualizar y borrar una tarea
+  ---
+  duration_ms: 108.683242
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 252.504396
+
+-- paso «Bajar los contenedores y borrar el .env»
+
+$ docker compose down -v --remove-orphans
+rm -f .env
+ Container tareas-app Stopping 
+ Container tareas-app Stopped 
+ Container tareas-app Removing 
+ Container tareas-app Removed 
+ Container tareas-db Stopping 
+ Container tareas-db Stopped 
+ Container tareas-db Removing 
+ Container tareas-db Removed 
+ Volume tareas-ci_tareas-datos Removing 
+ Network tareas-ci_red-tareas Removing 
+ Volume tareas-ci_tareas-datos Removed 
+ Network tareas-ci_red-tareas Removed 
+== resultado del job: success
+(código de salida: 0)

@@ -1,0 +1,60 @@
+$ python tools/simular_ci.py actions
+===== GitHub Actions, job «pruebas-unitarias»: Instalar dependencias y pruebas unitarias
+-- paso «Descargar código» (actions/checkout@v7): omitido, el código ya está en la carpeta
+-- paso «Pruebas unitarias dentro de node:22-alpine»
+$ docker run --rm -v "$PWD:/app" -w /app node:22-alpine sh -c \
+  "node --version && npm --version && npm ci --no-audit --no-fund && npm test"
+v22.23.5
+10.9.9
+added 82 packages in 3s
+[...]
+# tests 5
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 1
+# todo 0
+[...]
+== resultado del job: success
+===== GitHub Actions, job «contenedores»: Imagen, dos contenedores, /salud y pruebas de integración
+-- paso «Descargar código» (actions/checkout@v7): omitido, el código ya está en la carpeta
+-- paso «Archivo .env con una clave de un solo uso»
+$ printf 'POSTGRES_USER=tareas_user\nPOSTGRES_PASSWORD=%s\nPOSTGRES_DB=tareas\nAPP_PUERTO=%s\n' "$(openssl rand -hex 16)" "$APP_PUERTO" > .env
+-- paso «Construir la imagen de la API»
+$ docker compose build app
+[...]
+ Image tareas-ci-app Built 
+-- paso «Levantar los dos contenedores»
+$ docker compose up -d --wait
+docker compose ps
+[...]
+ Container tareas-db Healthy 
+[...]
+ Container tareas-app Healthy 
+ Container tareas-db Healthy 
+NAME         IMAGE                COMMAND                  SERVICE   CREATED         STATUS                   PORTS
+tareas-app   tareas-ci-app        "docker-entrypoint.s…"   app       7 seconds ago   Up Less than a second    0.0.0.0:8095->3000/tcp, [::]:8095->3000/tcp
+tareas-db    postgres:16-alpine   "docker-entrypoint.s…"   db        7 seconds ago   Up 6 seconds (healthy)   5432/tcp
+-- paso «Verificar /salud»
+$ curl -fsS --retry 10 --retry-connrefused --retry-delay 2 "http://localhost:${APP_PUERTO}/salud"
+{"estado":"ok","base_de_datos":"tareas","version":"PostgreSQL 16.14 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit","hora_bd":"2026-11-19T10:24:47.419Z"}
+-- paso «Pruebas de integración»
+$ docker compose exec -T app npm test
+[...]
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+[...]
+-- paso «Bajar los contenedores y borrar el .env»
+$ docker compose down -v --remove-orphans
+rm -f .env
+[...]
+ Volume tareas-ci_tareas-datos Removed 
+ Network tareas-ci_red-tareas Removed 
+== resultado del job: success
+(código de salida: 0)

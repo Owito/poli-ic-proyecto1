@@ -1,0 +1,5 @@
+$ docker exec jenkins docker version --format 'cliente {{.Client.Version}} -> motor {{.Server.Version}} ({{.Server.Os}})'; docker exec jenkins docker compose version; docker exec jenkins git --version; docker exec jenkins bash -c 'echo DOCKER_HOST=$DOCKER_HOST'
+cliente 29.10.0 -> motor 29.10.0 (linux)
+Docker Compose version v5.8.0
+git version 2.47.3
+DOCKER_HOST=tcp://docker:2376

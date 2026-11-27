@@ -1,0 +1,8 @@
+$ docker network ls --filter name=jenkins; docker image ls tareas-jenkins; docker ps --filter name=jenkins --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}'
+NETWORK ID     NAME      DRIVER    SCOPE
+0b7a3140a846   jenkins   bridge    local
+IMAGE                      ID             DISK USAGE   CONTENT SIZE   EXTRA
+tareas-jenkins:2.580.2-1   4870cd620797       1.06GB          353MB   U    
+NAMES            IMAGE                      STATUS         PORTS
+jenkins          tareas-jenkins:2.580.2-1   Up 4 minutes   0.0.0.0:50000->50000/tcp, [::]:50000->50000/tcp, 0.0.0.0:8181->8080/tcp, [::]:8181->8080/tcp
+jenkins-docker   docker:dind                Up 6 minutes   0.0.0.0:2376->2376/tcp, [::]:2376->2376/tcp

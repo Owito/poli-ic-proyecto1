@@ -1,0 +1,28 @@
+$ curl -s -u <usuario>:<clave> http://localhost:8181/job/tareas-equipo/3/consoleText | (líneas clave)
+Started by an SCM change
+[Pipeline] { (Descargar código)
+Commit 25bcac6 de Carloswar: test: cerrar el servidor aunque la prueba falle; ci: tiempo límite en el pipeline
+[Pipeline] { (Instalar dependencias y pruebas unitarias)
+v22.23.5
+not ok 1 - POST /tareas sin titulo responde 400
+  expected: 400
+  actual: 500
+ok 2 - GET /tareas con estado inválido responde 400
+ok 3 - GET /tareas/:id inexistente responde 404
+ok 4 - GET /salud responde 503 si la BD falla
+ok 5 - integración: salud, crear, leer, actualizar y borrar una tarea # SKIP sin DB_HOST: prueba de integración omitida
+# tests 5
+# pass 3
+# fail 1
+# skipped 1
+[Pipeline] { (Construir la imagen de la API)
+Stage "Construir la imagen de la API" skipped due to earlier failure(s)
+[Pipeline] { (Levantar los dos contenedores)
+Stage "Levantar los dos contenedores" skipped due to earlier failure(s)
+[Pipeline] { (Verificar /salud)
+Stage "Verificar /salud" skipped due to earlier failure(s)
+[Pipeline] { (Pruebas de integración)
+Stage "Pruebas de integración" skipped due to earlier failure(s)
+La integración falló: revise la etapa en rojo antes de seguir integrando cambios.
+ERROR: script returned exit code 1
+Finished: FAILURE

@@ -6,3 +6,8 @@ docs
 *.md
 *.docx
 *.pdf
+.npm-cache
+jenkins
+Jenkinsfile
+.travis.yml
+.github
