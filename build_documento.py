@@ -39,14 +39,16 @@ REPO_PUBLICO = True   # ✅ 6-nov-2026: gh repo view -> "PUBLIC"; curl sin sesi�
 COLABORADORES_INVITADOS = False
 # Entrega final. Cambiar solo después de comprobarlo:
 #   RAMA_EN_MAIN: git ls-remote origin  ->  main contiene el Jenkinsfile, .travis.yml y .github/workflows
-#     (26-nov-2026: main de GitHub = 190bf46, solo la primera parte)
+#     (26-nov-2026: main de GitHub = 190bf46, solo la primera parte; Carlos autorizó integrar la rama por el PR #5,
+#      merge sin squash; se comprueba con git ls-remote y curl sin sesión antes de publicar este documento)
 #   RAMA_PUBLICADA: git ls-remote origin  ->  la rama de las entregas 2 y 3 existe en GitHub y su página abre sin sesión
 #     (✅ 26-nov-2026: poli-trabajos/ic-entrega3-travis-codeship = 0ad8674; curl sin sesión a URL_RAMA -> HTTP 200 y la
 #      página lista Jenkinsfile, .travis.yml y .github)
 #   EJECUCION_ACTIONS: gh run view <id> -R Owito/poli-ic-proyecto1  ->  los dos jobs y el paso Verificar /salud en success
 #     (✅ 26-nov-2026: ejecución 45919779652, evento push sobre 0ad8674, 52 s, success)
 #   ENLACE_VIDEO: dirección del video de sustentación, abierta en una ventana sin sesión antes de escribirla aquí
-RAMA_EN_MAIN = False
+RAMA_EN_MAIN = True
+PR_INTEGRACION = 5
 RAMA_PUBLICADA = True
 URL_RAMA = "https://github.com/Owito/poli-ic-proyecto1/tree/poli-trabajos/ic-entrega3-travis-codeship"
 EJECUCION_ACTIONS = "45919779652"
@@ -1276,8 +1278,10 @@ parrafo("Tres observaciones ayudan a leerlo. Los commits del 8 de noviembre con 
         "abierta en la consulta a GitHub del 26 de noviembre de 2026. Los commits 335a28e, 34592c9 y 8e708a8 son la prueba de la segunda "
         "parte: el error introducido a propósito, la corrección de las pruebas y del pipeline, y la reversión. Y los nombres de autor "
         f"{' y '.join(autores)} corresponden a la misma dirección de correo en Git, la de Carlos Fernando Guerra Arango. Los commits que se "
-        "hagan después de generar el documento no aparecen en la tabla. El historial de ejecuciones de Jenkins está en "
-        "la Tabla 8 de la segunda parte.")
+        "hagan después de generar el documento no aparecen en la tabla"
+        + (f"; entre ellos, el commit de integración de la solicitud de cambios #{PR_INTEGRACION}, con la que la rama de las entregas 2 y 3 "
+           "entró a main el 26 de noviembre de 2026" if RAMA_EN_MAIN else "")
+        + ". El historial de ejecuciones de Jenkins está en la Tabla 8 de la segunda parte.")
 HITOS = {}
 for fila_h in HISTORIAL:
     HITOS[fila_h[6]] = fila_h  # queda el último commit de cada entrega
@@ -1331,7 +1335,9 @@ tabla("Problemas encontrados, causas, soluciones y sugerencias", ["Problema", "C
      f"Revisar los mensajes de la pestaña View Config del primer build ({tr('validacion')})."],
     ["El 26 de noviembre de 2026, el enlace del repositorio solo mostraba la primera parte: main estaba en 190bf46 y GitHub Actions no tenía ejecuciones.",
      "Las ramas de las entregas 2 y 3 se trabajaron en el equipo y no se publicaron en GitHub.",
-     (f"La rama se publicó en GitHub el 26 de noviembre de 2026 y GitHub Actions la ejecutó con éxito (ejecución {EJECUCION_ACTIONS}); "
+     (f"La rama se publicó en GitHub el 26 de noviembre de 2026, GitHub Actions la ejecutó con éxito (ejecución {EJECUCION_ACTIONS}) "
+      f"y se integró en main ese mismo día con la solicitud de cambios #{PR_INTEGRACION}." if RAMA_EN_MAIN else
+      f"La rama se publicó en GitHub el 26 de noviembre de 2026 y GitHub Actions la ejecutó con éxito (ejecución {EJECUCION_ACTIONS}); "
       "queda pendiente integrarla en main." if RAMA_PUBLICADA else "Pendiente: publicar la rama e integrarla en main."),
      "Publicar cada entrega al terminarla y abrir el enlace en una ventana sin sesión antes de entregar, como pidió el tutor."],
     ["Al guardar en un archivo la salida de tools/simular_ci.py, las tildes y las comillas salieron dañadas.",
