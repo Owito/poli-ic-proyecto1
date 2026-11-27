@@ -35,8 +35,14 @@ FUENTE = "Times New Roman"
 # que de verdad está hecho. Cambiar a True solo después de comprobarlo con gh:
 #   REPO_PUBLICO: gh repo view Owito/poli-ic-proyecto1 --json visibility  ->  "PUBLIC" (y recapturar 19-github)
 #   COLABORADORES_INVITADOS: gh api repos/Owito/poli-ic-proyecto1/collaborators --jq '.[].login'  ->  lista a los integrantes
-REPO_PUBLICO = True   # ✅ 6-nov-2026: gh repo view -> "PUBLIC"; curl sin sesión -> HTTP 200
+REPO_PUBLICO = True   # ✅ 6-nov-2026: gh repo view -> "PUBLIC"; curl sin sesión -> HTTP 200 (✅ otra vez el 26-nov-2026)
 COLABORADORES_INVITADOS = False
+# Entrega final. Cambiar solo después de comprobarlo:
+#   RAMA_PUBLICADA: git ls-remote origin  ->  main contiene el Jenkinsfile, .travis.yml y .github/workflows
+#     (26-nov-2026: main de GitHub = 190bf46, solo la primera parte; las ramas de las entregas 2 y 3 no están publicadas)
+#   ENLACE_VIDEO: dirección del video de sustentación, abierta en una ventana sin sesión antes de escribirla aquí
+RAMA_PUBLICADA = False
+ENLACE_VIDEO = ""
 
 doc = Document()
 
@@ -354,10 +360,27 @@ parrafo("La tercera parte corresponde a la Entrega 3. El enunciado pide que la p
         "Jenkins, Travis CI y Codeship, y que el documento consolide el historial de cambios, las sugerencias para la solución de "
         "problemas y las responsabilidades y opiniones (Politécnico Grancolombiano, s. f.). Se agregaron las configuraciones de Travis CI "
         "y de GitHub Actions, que ejecutan las mismas etapas que Jenkins; GitHub Actions reemplaza a Codeship, que CloudBees retiró en "
-        "enero de 2026, como se explica y se evidencia en esa parte.")
+        "enero de 2026, como se explica y se evidencia en esa parte. La entrega final incluye, además de este documento, un video de "
+        "sustentación en el que todos los integrantes muestran el proyecto en funcionamiento, como pidió el tutor (Reyes Corredor, 2026).")
 parrafo("Cada captura de pantalla del documento es la salida real de un comando, una vista real de la interfaz de Jenkins o una página "
         "oficial de documentación, obtenida durante la elaboración del trabajo, y va acompañada de una explicación de lo que muestra y de "
         "por qué importa para el proyecto.")
+titulo("Enlaces para revisar el proyecto", 2)
+parrafo("El tutor pidió en cada entrega un enlace que le permita entrar al proyecto y validarlo, y que el grupo compruebe antes que el "
+        "enlace funciona (Reyes Corredor, 2026). Estos son los enlaces de la entrega final.")
+if RAMA_PUBLICADA:
+    ESTADO_RAMA = ("La rama main contiene las tres partes del proyecto: el Jenkinsfile, el archivo .travis.yml y el flujo de "
+                   "GitHub Actions en la carpeta .github/workflows.")
+else:
+    ESTADO_RAMA = ("[[COMPLETAR (Carlos): publicar en GitHub la rama de las entregas 2 y 3 e integrarla en main, porque al 26 de "
+                   "noviembre de 2026 la rama main del repositorio solo tiene la primera parte; después, comprobar sin sesión que el "
+                   "enlace muestra el Jenkinsfile, el archivo .travis.yml y la carpeta .github/workflows.]]")
+parrafo("**Repositorio en GitHub:** https://github.com/Owito/poli-ic-proyecto1. Es público: el 26 de noviembre de 2026 su página "
+        "respondió con el código HTTP 200 a una consulta hecha sin iniciar sesión. " + ESTADO_RAMA)
+parrafo("**Video de sustentación:** " + (f"{ENLACE_VIDEO}. El guion está en la sección Sustentación en video de la tercera parte."
+        if ENLACE_VIDEO else
+        "[[COMPLETAR (Carlos, cuando el grupo publique el video): enlace en YouTube o en Drive, comprobado en una ventana sin "
+        "sesión iniciada.]] El guion está en la sección Sustentación en video de la tercera parte."))
 titulo("Objetivo general", 2)
 parrafo("Construir una aplicación de dos contenedores, una API en Node.js y una base de datos PostgreSQL, y automatizar su integración "
         "continua con Jenkins, Travis CI y GitHub Actions, de modo que cada cambio en el repositorio se pruebe, se construya y se "
@@ -377,6 +400,7 @@ parrafo("Octavo, integrar el proyecto con Travis CI y con un servicio equivalent
         "servicio en su fuente oficial, de modo que ambos ejecuten las mismas etapas que Jenkins.")
 parrafo("Noveno, consolidar el historial de cambios, las sugerencias para la solución de problemas y las responsabilidades y opiniones "
         "de los integrantes.")
+parrafo("Décimo, sustentar el proyecto en un video en el que todos los integrantes muestran en funcionamiento las herramientas integradas.")
 
 # ================================================================ PRIMERA PARTE
 salto()
@@ -826,7 +850,7 @@ tabla("Ejecuciones del trabajo tareas-equipo", ["N.º", "Cómo se inició", "Com
     ["3", "Cambio en el repositorio", "34592c9, pruebas y tiempo límite corregidos", "FAILURE", "7,8 s", "El error sigue y el pipeline se detiene en las pruebas unitarias."],
     ["4", "Cambio en el repositorio", "8e708a8, revierte el error", "SUCCESS", "19 s", "Todo en verde otra vez."],
 ], [0.4, 1.0, 1.5, 0.9, 0.8, 1.9])
-parrafo("Los identificadores de commit de esta sección son los de la rama publicada en GitHub. Antes de publicarla se ajustaron los mensajes de sus commits, sin cambiar el código, y por eso cambiaron sus identificadores. Las consolas y las capturas de Jenkins conservan los que tenían en la copia local del repositorio: 50c76c4 aparece allí como 35489a5, 335a28e como d06d969, 34592c9 como 25bcac6 y 8e708a8 como 53d6fe3.")
+parrafo("Los identificadores de commit de esta sección son los de la rama definitiva del repositorio, la que se publicará en GitHub. Al prepararla para publicarla se ajustaron los mensajes de sus commits, sin cambiar el código, y por eso cambiaron sus identificadores. Las consolas y las capturas de Jenkins conservan los que tenían en la copia local del repositorio: 50c76c4 aparece allí como 35489a5, 335a28e como d06d969, 34592c9 como 25bcac6 y 8e708a8 como 53d6fe3.")
 titulo("Una ejecución completa en verde", 3)
 parrafo(f"La Figura {sig('fig')} muestra las etapas de la ejecución 4 y la Figura {sig('fig') + 1} las líneas clave de su consola.", keep=True)
 figura("j15-etapas-verde.png", "Etapas de la ejecución 4 en verde",
@@ -947,7 +971,9 @@ parrafo("El enunciado de la Entrega 3 pide que, en este punto, la plataforma de 
         "responsabilidades y opiniones del grupo.")
 parrafo("Para elegir las herramientas se tuvo en cuenta una indicación que el tutor repitió en varios encuentros: si una herramienta "
         "obliga a pagar una licencia, el grupo debe buscar otra que cumpla la misma función y que sea libre, porque “no se trata de que "
-        "paguen la herramienta” (Reyes Corredor, 2026).")
+        "paguen la herramienta” (Reyes Corredor, 2026). En el encuentro del 23 de noviembre lo precisó para esta entrega: si una de las "
+        "dos herramientas, Travis CI o Codeship, era libre y ahora cobra, el grupo puede usar una herramienta equivalente, porque muchas "
+        "herramientas de integración continua tienen las mismas características o casi las mismas (Reyes Corredor, 2026).")
 
 titulo("Estado de Travis CI y Codeship en noviembre de 2026", 2)
 parrafo(f"Los servicios de integración continua en la nube cambian sus planes con el tiempo, así que antes de escribir cualquier "
@@ -1065,8 +1091,13 @@ parrafo("Tres decisiones vienen de lo aprendido con Jenkins. La clave de la base
         "diez veces, cada dos segundos, porque en docker-compose.yml solo la base de datos tiene comprobación de salud y la API puede tardar "
         "unos instantes en aceptar conexiones después de arrancar.")
 titulo("Ejecución en Travis CI", 3)
-parrafo("[[COMPLETAR: captura del build en Travis una vez Carlos conecte la cuenta (las dos etapas en verde y la consola de la etapa "
-        "contenedores con la respuesta de /salud y las pruebas de integración)]]")
+parrafo(f"La ejecución en la nube de Travis CI requiere activar la cuenta con créditos por una de las vías de la Tabla {TABLA_TRAVIS} y "
+        f"publicar la rama en GitHub. Mientras tanto, la evidencia de ejecución es la de la Figura {F('t06-travis-local')}: los comandos "
+        "de .travis.yml ejecutados en el equipo del proyecto, que se repitieron el 26 de noviembre de 2026 con el mismo resultado. Si el "
+        "grupo no consigue los créditos, GitHub Actions ejecuta las mismas etapas en la nube y cumple como herramienta equivalente, según "
+        "la indicación del tutor citada al comienzo de esta parte.")
+parrafo("[[COMPLETAR (Carlos, al activar la cuenta de Travis CI): captura del build en travis-ci.com con las dos etapas en verde y la "
+        "consola de la etapa contenedores con la respuesta de /salud y las pruebas de integración.]]")
 
 titulo("Codeship y su reemplazo", 2)
 titulo("Qué era Codeship", 3)
@@ -1142,8 +1173,12 @@ parrafo(f"**timeout-minutes** fija un máximo de 15 minutos por job; sin él, Gi
         "20261111.370.1 (GitHub, 2026).")
 titulo("Ejecución en GitHub Actions", 3)
 parrafo("GitHub Actions está habilitado en el repositorio, según la consulta a la API de GitHub del 19 de noviembre de 2026, y el "
-        "disparador push aplica a cualquier rama; por eso el flujo se ejecutará solo en cuanto se publique en GitHub la rama de esta entrega.")
-parrafo("[[COMPLETAR: captura de la ejecución en GitHub Actions después de publicar la rama (los dos jobs en verde y el paso Verificar /salud)]]")
+        "disparador push aplica a cualquier rama; por eso el flujo se ejecutará solo en cuanto se publique en GitHub la rama de esta entrega. "
+        "El 26 de noviembre de 2026 la API pública de GitHub reportaba cero ejecuciones de Actions en el repositorio, porque la rama todavía "
+        f"no estaba publicada. Hasta entonces, la evidencia de ejecución es la de la Figura {F('t07-actions-local')}, repetida ese mismo día "
+        "con el mismo resultado.")
+parrafo("[[COMPLETAR (Carlos, al publicar la rama): captura de la pestaña Actions del repositorio con los dos jobs en verde y el paso "
+        "Verificar /salud.]]")
 
 titulo("Validación local de las dos configuraciones", 2)
 parrafo("Antes de conectar los servicios se comprobó en el equipo del proyecto que los dos archivos están bien escritos y que sus comandos "
@@ -1179,6 +1214,11 @@ figura("t07-actions-local.png", "Ejecución en el equipo de los comandos del flu
        f"con Node.js 22.23.5: cuatro aprobadas y una omitida. Como terminó bien, corre el job contenedores, con el mismo resultado que en la "
        f"Figura {F('t06-travis-local')}: imagen construida, contenedores saludables, /salud con PostgreSQL 16.14 y cinco pruebas aprobadas. El "
        "último paso baja los contenedores. Los dos jobs terminan en success.", ancho=5.0)
+parrafo("Las dos ejecuciones se repitieron el 26 de noviembre de 2026, sin cambios en la aplicación ni en los archivos de configuración "
+        "desde el commit 065e2ec, y dieron el mismo resultado: en Travis CI, las dos etapas en passed; en GitHub Actions, los dos jobs en "
+        "success; en ambos casos, cuatro pruebas unitarias aprobadas y una omitida, los dos contenedores saludables, /salud con PostgreSQL "
+        "16.14 y las cinco pruebas aprobadas dentro del contenedor de la API. Los registros completos están en los archivos "
+        "evidencias/texto/t06-travis-local-2026-11-26.txt y evidencias/texto/t07-actions-local-2026-11-26.txt del repositorio.")
 
 titulo("Historial de cambios", 2)
 autores = sorted({f[3] for f in HISTORIAL})
@@ -1191,11 +1231,21 @@ tabla("Historial de commits del repositorio", ["N.º", "Commit", "Fecha", "Autor
       [0.35, 0.7, 0.9, 0.85, 0.45, 2.65, 0.6])
 parrafo("Tres observaciones ayudan a leerlo. Los commits del 8 de noviembre con un número entre paréntesis, de (#1) a (#3), son solicitudes "
         "de cambio (pull requests) integradas en la rama main desde GitHub; la solicitud #4, que completa un nombre en la portada, seguía "
-        "abierta en la consulta a GitHub del 19 de noviembre de 2026. Los commits 335a28e, 34592c9 y 8e708a8 son la prueba de la segunda "
+        "abierta en la consulta a GitHub del 26 de noviembre de 2026. Los commits 335a28e, 34592c9 y 8e708a8 son la prueba de la segunda "
         "parte: el error introducido a propósito, la corrección de las pruebas y del pipeline, y la reversión. Y los nombres de autor "
         f"{' y '.join(autores)} corresponden a la misma dirección de correo en Git, la de Carlos Fernando Guerra Arango. Los commits que se "
         "hagan después de generar el documento no aparecen en la tabla. El historial de ejecuciones de Jenkins está en "
         "la Tabla 8 de la segunda parte.")
+HITOS = {}
+for fila_h in HISTORIAL:
+    HITOS[fila_h[6]] = fila_h  # queda el último commit de cada entrega
+parrafo("El tutor explicó que cada herramienta guarda su propio historial, como el de las ejecuciones de Jenkins, pero que el historial "
+        "general del proyecto lo da Git, y que las versiones se marcan con etiquetas (tags) cuando hay un cambio significativo, no cada "
+        "semana (Reyes Corredor, 2026). En este proyecto, los cambios significativos son las tres entregas. Según la tabla, la primera "
+        f"termina en el commit {HITOS['1'][1]} ({HITOS['1'][2]}), la segunda en {HITOS['2'][1]} ({HITOS['2'][2]}) y la tercera, hasta la "
+        f"generación de este documento, en {HITOS['3'][1]} ({HITOS['3'][2]}). Como sugerencia, al integrar la rama en main se pueden marcar "
+        f"esos tres puntos con las etiquetas v1.0, v2.0 y v3.0, por ejemplo con git tag -a v1.0 {HITOS['1'][1]} -m \"Entrega 1\", y "
+        "publicarlas con git push origin --tags. Esas etiquetas todavía no se han creado.")
 
 titulo("Sugerencias para la solución de problemas", 2)
 parrafo(f"La Tabla {sig('tab')} reúne los problemas que aparecieron durante las tres entregas, con la causa encontrada, cómo se resolvió y "
@@ -1237,6 +1287,14 @@ tabla("Problemas encontrados, causas, soluciones y sugerencias", ["Problema", "C
      "El esquema admite varias formas de escribir la configuración, porque Travis CI la normaliza.",
      "Se complementó con la ejecución de los comandos en el equipo.",
      f"Revisar los mensajes de la pestaña View Config del primer build ({tr('validacion')})."],
+    ["El 26 de noviembre de 2026, el enlace del repositorio solo mostraba la primera parte: main estaba en 190bf46 y GitHub Actions no tenía ejecuciones.",
+     "Las ramas de las entregas 2 y 3 se trabajaron en el equipo y no se publicaron en GitHub.",
+     "Pendiente: publicar la rama e integrarla en main.",
+     "Publicar cada entrega al terminarla y abrir el enlace en una ventana sin sesión antes de entregar, como pidió el tutor."],
+    ["Al guardar en un archivo la salida de tools/simular_ci.py, las tildes y las comillas salieron dañadas.",
+     "En Windows, cuando la salida va a un archivo, Python escribe con la codificación regional del sistema y no con UTF-8.",
+     "Se repitió la ejecución con la variable PYTHONIOENCODING=utf-8.",
+     "Definir PYTHONIOENCODING=utf-8 antes de guardar registros que van como evidencia."],
     ["Preventivo: límite de descargas de Docker Hub en Travis CI.",
      f"La documentación de Travis CI advierte que, por ese límite, habrá que agregar credenciales propias a la configuración ({tr('docker')}).",
      "No se ha necesitado.",
@@ -1248,17 +1306,41 @@ tabla("Problemas encontrados, causas, soluciones y sugerencias", ["Problema", "C
 ], [1.5, 1.7, 1.5, 1.8])
 
 titulo("Responsabilidades y opiniones", 2)
-parrafo(f"El enunciado pide consolidar las responsabilidades y las opiniones de los integrantes (Politécnico Grancolombiano, s. f.). La Tabla "
-        f"{sig('tab')} las reúne. Las responsabilidades de Carlos Fernando Guerra Arango salen del historial de Git, en el que todos los commits "
-        "están registrados con su usuario; las de los demás integrantes y todas las opiniones las escribe cada persona. Según la consulta a la "
-        "API de GitHub del 19 de noviembre de 2026, el repositorio tiene, además de la cuenta propietaria, tres colaboradores con permiso de escritura.", keep=True)
+parrafo(f"El enunciado pide consolidar las responsabilidades y las opiniones de los integrantes (Politécnico Grancolombiano, s. f.), y el "
+        f"tutor insistió en ese punto en el encuentro del 23 de noviembre (Reyes Corredor, 2026). La Tabla {sig('tab')} las reúne. Las "
+        "responsabilidades de Carlos Fernando Guerra Arango salen del historial de Git, en el que todos los commits están registrados con su "
+        "usuario; las de los demás integrantes, incluido el segmento del video que presenta cada uno, y todas las opiniones las escribe cada "
+        "persona. Según la consulta a la API de GitHub del 19 de noviembre de 2026, el repositorio tiene, además de la cuenta propietaria, "
+        "tres colaboradores con permiso de escritura.", keep=True)
 INTEGRANTES = ["Leonardo Espinosa Rivera", "Daniel Santiago Estupiñán Cruz", "Anyelo Brayan Galindo Delgado", "Jerlinson Fabián Ramos Galíndez"]
-filas_resp = [[n, f"[[COMPLETAR: responsabilidades de {n}]]", f"[[COMPLETAR: opinión de {n}]]"] for n in INTEGRANTES]
+filas_resp = [[n, f"[[COMPLETAR (lo escribe {n}): sus responsabilidades en el proyecto y el segmento del video que presenta]]",
+               f"[[COMPLETAR (lo escribe {n}): su opinión sobre el proyecto, de tres a cinco líneas]]"] for n in INTEGRANTES]
 filas_resp.append(["Carlos Fernando Guerra Arango",
                    f"Autor de los {len(HISTORIAL)} commits del historial: la API y sus pruebas, los contenedores, la publicación en GitHub, "
                    "Jenkins, Travis CI, GitHub Actions y el documento de las tres partes.",
-                   "[[COMPLETAR: opinión de Carlos Fernando Guerra Arango]]"])
+                   "[[COMPLETAR (lo escribe Carlos Fernando Guerra Arango): su opinión sobre el proyecto, de tres a cinco líneas]]"])
+TABLA_RESP = sig("tab")
 tabla("Responsabilidades y opiniones de los integrantes", ["Integrante", "Responsabilidades", "Opinión"], filas_resp, [1.5, 2.6, 2.4])
+
+titulo("Sustentación en video", 2)
+parrafo("El tutor explicó que la sustentación de la entrega final es un video que acompaña a este documento. Pidió que dure de seis a "
+        "diez minutos, que hablen todos los integrantes para que se vea que todos participaron, que sea hablado y sin música de fondo, y "
+        "que muestre el proyecto en la práctica y no el documento: los contenedores, su integración con GitHub, lo que hace cada "
+        "herramienta y los resultados que se obtuvieron. También pidió subirlo a YouTube o a Drive y comprobar que el enlace abre sin "
+        "pedir permisos, y anunció que la sustentación tiene un peso alto en la rúbrica final (Reyes Corredor, 2026). El video se puede "
+        "grabar en una reunión en línea en la que cada integrante comparte su pantalla, o por segmentos que luego se unen, dos formas que "
+        f"el tutor aceptó. La Tabla {sig('tab')} es el guion del video.", keep=True)
+tabla("Guion de la sustentación en video", ["N.º", "Segmento", "Qué se muestra en vivo", "Minutos"], [
+    ["1", "Presentación", "Cada integrante dice su nombre. Se presenta el proyecto: una API de tareas en Node.js con PostgreSQL, en dos contenedores.", "1"],
+    ["2", "Repositorio e historial", "La página del repositorio en GitHub y el historial de commits de las tres entregas, con git log --oneline.", "1"],
+    ["3", "Contenedores", "docker compose up -d --wait; docker compose ps con tareas-app y tareas-db saludables; curl a /salud y a /tareas.", "1,5"],
+    ["4", "Jenkins", "El arranque con jenkins\\levantar.ps1, el tablero en http://localhost:8181, una ejecución de tareas-equipo con las etapas en verde y el historial con la ejecución que falló.", "1,5"],
+    ["5", "Travis CI", f"El archivo .travis.yml, el estado de la cuenta (Tabla {TABLA_TRAVIS}) y python tools/simular_ci.py travis con las dos etapas en passed.", "1"],
+    ["6", "Codeship y GitHub Actions", "El aviso de fin de vida de CodeShip, el flujo .github/workflows/integracion-continua.yml y su ejecución en la pestaña Actions del repositorio o, si la rama no está publicada, con python tools/simular_ci.py actions.", "1,5"],
+    ["7", "Cierre", "Un problema resuelto con su sugerencia y la opinión breve de cada integrante.", "1"],
+], [0.4, 1.4, 3.9, 0.8])
+parrafo("La suma es de unos ocho minutos y medio, dentro del rango que pidió el tutor. Cada integrante presenta al menos un segmento; el "
+        f"segmento de cada uno queda escrito en sus responsabilidades, en la Tabla {TABLA_RESP}.")
 
 titulo("Cómo reproducir la tercera parte", 2)
 parrafo(f"Para Travis CI se crea la cuenta, se conecta el repositorio con los pasos de la Tabla {TABLA_TRAVIS} y se sube un commit. Para "
@@ -1300,7 +1382,7 @@ parrafo("El caso de Codeship dejó una lección práctica: los servicios de inte
         "objetivo: el proyecto queda integrado con contenedores, Jenkins, Travis CI y un reemplazo fiel de Codeship, todos con las mismas etapas.")
 parrafo("Como limitaciones de la tercera parte, la ejecución en Travis CI depende de que el grupo active una cuenta con créditos, y la de "
         "GitHub Actions, de que se publique la rama en GitHub; mientras tanto, la evidencia de ejecución de las dos configuraciones es la "
-        "ejecución de sus comandos en el equipo del proyecto.")
+        "ejecución de sus comandos en el equipo del proyecto, que se repitió el 26 de noviembre de 2026 con el mismo resultado.")
 # Párrafo del grupo (experiencia y distribución del trabajo): lo escribe el grupo y va aquí. Si no llega antes del
 # cierre, se omite y la sección queda completa sin él.
 
@@ -1349,7 +1431,7 @@ REF = [
     "Politécnico Grancolombiano. (s. f.). *Proyecto de software basado en herramientas de integración continua* [Enunciado del proyecto del "
     "módulo Énfasis Profesional I (Integración Continua)]. Institución Universitaria Politécnico Grancolombiano.",
     "PostgreSQL Global Development Group. (s. f.). *PostgreSQL 16 documentation*. Recuperado el 5 de noviembre de 2026, de https://www.postgresql.org/docs/16/",
-    "Reyes Corredor, E. (2026, 19 y 26 de octubre, y 5 y 9 de noviembre). *Encuentros sincrónicos de Énfasis Profesional I (Integración Continua)* [Grabaciones de clase]. Politécnico Grancolombiano.",
+    "Reyes Corredor, E. (2026, 19 y 26 de octubre, y 5, 9, 19 y 23 de noviembre). *Encuentros sincrónicos de Énfasis Profesional I (Integración Continua)* [Grabaciones de clase]. Politécnico Grancolombiano.",
     f"rhysd. (2026). *actionlint* (versión 1.7.12) [Software]. GitHub. {R19}https://github.com/rhysd/actionlint",
     f"SchemaStore. (s. f.). *github-workflow.json* [Esquema JSON de los flujos de GitHub Actions]. {R19}https://json.schemastore.org/github-workflow.json",
     f"Travis CI. (s. f.-a). *Billing FAQ*. Travis CI Docs. {R19}https://docs.travis-ci.com/user/billing-faq/",

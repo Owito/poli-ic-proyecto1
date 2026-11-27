@@ -30,7 +30,7 @@ def control(nombre, ok, detalle=""):
 
 print("Páginas:", len(paginas))
 
-for tipo, total in (("Figura", 49), ("Tabla", 16), ("Listado", 7)):
+for tipo, total in (("Figura", 49), ("Tabla", 17), ("Listado", 7)):
     rotulos = [int(n) for n in re.findall(rf"(?m)^{tipo} (\d+)\s*$", texto)]
     faltan = sorted(set(range(1, total + 1)) - set(rotulos))
     control(f"{tipo}s rotuladas 1 a {total}", not faltan and len(rotulos) == total, f"rótulos {len(rotulos)}, faltan {faltan}")
@@ -42,8 +42,14 @@ pendientes = plano.count("COMPLETAR")
 control(f"Pendientes COMPLETAR: {pendientes}", pendientes == esperados, f"esperados {esperados}")
 control("Sin corchetes dobles sueltos", "[[" not in texto and "]]" not in texto)
 control("Sin guion largo (U+2014)", "\u2014" not in texto)
-toc = " ".join(paginas[1:4])
-control("Tabla de contenido con las tres partes", all(p in toc for p in ("Primera parte", "Segunda parte", "Tercera parte")))
+control("Sin '??' (referencias rotas)", "??" not in texto)
+control("Sin errores de campo de Word", "Error!" not in texto)
+# C\u00f3digos estudiantiles: el documento lleva solo nombres. Un c\u00f3digo del Poli es un n\u00famero de 9 o 10 cifras.
+codigos = sorted(set(re.findall(r"(?<![\w.,-])\d{8,11}(?![\w.,-])", texto)))
+control("Sin n\u00fameros de 8 a 11 cifras (c\u00f3digos estudiantiles)", not codigos, f"encontrados {codigos}")
+toc = " ".join(paginas[1:5])  # el índice ocupa de la página 2 a la 5
+control("Tabla de contenido con las tres partes y la sustentaci\u00f3n",
+        all(p in toc for p in ("Primera parte", "Segunda parte", "Tercera parte", "Sustentaci\u00f3n en video")))
 
 # Referencias: cada entrada debe citarse en el texto (autor y sufijo de fecha).
 ini = plano.rfind("Referencias")
