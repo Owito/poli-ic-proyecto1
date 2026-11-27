@@ -38,10 +38,19 @@ FUENTE = "Times New Roman"
 REPO_PUBLICO = True   # ✅ 6-nov-2026: gh repo view -> "PUBLIC"; curl sin sesión -> HTTP 200 (✅ otra vez el 26-nov-2026)
 COLABORADORES_INVITADOS = False
 # Entrega final. Cambiar solo después de comprobarlo:
-#   RAMA_PUBLICADA: git ls-remote origin  ->  main contiene el Jenkinsfile, .travis.yml y .github/workflows
-#     (26-nov-2026: main de GitHub = 190bf46, solo la primera parte; las ramas de las entregas 2 y 3 no están publicadas)
+#   RAMA_EN_MAIN: git ls-remote origin  ->  main contiene el Jenkinsfile, .travis.yml y .github/workflows
+#     (26-nov-2026: main de GitHub = 190bf46, solo la primera parte)
+#   RAMA_PUBLICADA: git ls-remote origin  ->  la rama de las entregas 2 y 3 existe en GitHub y su página abre sin sesión
+#     (✅ 26-nov-2026: poli-trabajos/ic-entrega3-travis-codeship = 0ad8674; curl sin sesión a URL_RAMA -> HTTP 200 y la
+#      página lista Jenkinsfile, .travis.yml y .github)
+#   EJECUCION_ACTIONS: gh run view <id> -R Owito/poli-ic-proyecto1  ->  los dos jobs y el paso Verificar /salud en success
+#     (✅ 26-nov-2026: ejecución 45919779652, evento push sobre 0ad8674, 52 s, success)
 #   ENLACE_VIDEO: dirección del video de sustentación, abierta en una ventana sin sesión antes de escribirla aquí
-RAMA_PUBLICADA = False
+RAMA_EN_MAIN = False
+RAMA_PUBLICADA = True
+URL_RAMA = "https://github.com/Owito/poli-ic-proyecto1/tree/poli-trabajos/ic-entrega3-travis-codeship"
+EJECUCION_ACTIONS = "45919779652"
+URL_EJECUCION = f"https://github.com/Owito/poli-ic-proyecto1/actions/runs/{EJECUCION_ACTIONS}"
 ENLACE_VIDEO = ""
 
 doc = Document()
@@ -163,7 +172,8 @@ ORDEN = ["01-versiones", "02-estructura", "18-git-log", "19-github", "diagrama-a
          "j18-github-ejecucion", "j23-consola-github",
          # Tercera parte (Travis CI, Codeship y GitHub Actions)
          "t01-travis-prueba-gratuita", "t02-codeship-fin-de-vida", "t03-codeship-cierre", "diagrama-tres-ci",
-         "t04-actions-gratis-publicos", "t05-validacion-ci", "t06-travis-local", "t07-actions-local"]
+         "t04-actions-gratis-publicos", "t09-actions-nube", "t08-actions-nube-2026-11-26", "t05-validacion-ci",
+         "t06-travis-local", "t07-actions-local"]
 # Evidencias de la segunda parte que son salida de terminal (las demás "j" son capturas de la interfaz de Jenkins).
 J_TERMINAL = {"j01-levantar", "j09-cliente-docker", "j13-espejo"}
 J_CONSOLA = {"j21-consola-verde", "j22-consola-rojo", "j23-consola-github"}
@@ -177,6 +187,12 @@ NOTA_FIG = {
     "t04-actions-gratis-publicos": "Captura de la página oficial https://docs.github.com/en/actions/concepts/billing-and-usage, " + WEB,
     "t06-travis-local": EXTRACTO.format("t06-travis-local-completo.txt"),
     "t07-actions-local": EXTRACTO.format("t07-actions-local-completo.txt"),
+    "t09-actions-nube": (f"Captura de la página pública {URL_EJECUCION}, tomada el 26 de noviembre de 2026 con un navegador sin "
+                         "ventana y sin iniciar sesión (tools/capturar_actions.py); no se modificó."),
+    "t08-actions-nube-2026-11-26": ("Captura de la salida real del comando, consultada a la API de GitHub el 26 de noviembre de 2026. "
+                                    "El registro de cada paso solo se muestra con sesión iniciada en GitHub, por eso se presenta el "
+                                    "estado de los pasos que entrega la API. El texto está en el archivo "
+                                    "evidencias/texto/t08-actions-nube-2026-11-26.txt del repositorio."),
 }
 
 
@@ -368,9 +384,14 @@ parrafo("Cada captura de pantalla del documento es la salida real de un comando,
 titulo("Enlaces para revisar el proyecto", 2)
 parrafo("El tutor pidió en cada entrega un enlace que le permita entrar al proyecto y validarlo, y que el grupo compruebe antes que el "
         "enlace funciona (Reyes Corredor, 2026). Estos son los enlaces de la entrega final.")
-if RAMA_PUBLICADA:
+if RAMA_EN_MAIN:
     ESTADO_RAMA = ("La rama main contiene las tres partes del proyecto: el Jenkinsfile, el archivo .travis.yml y el flujo de "
                    "GitHub Actions en la carpeta .github/workflows.")
+elif RAMA_PUBLICADA:
+    ESTADO_RAMA = ("La rama main conserva la primera parte; las tres partes del proyecto están en la rama "
+                   "poli-trabajos/ic-entrega3-travis-codeship, publicada en GitHub el 26 de noviembre de 2026: "
+                   f"{URL_RAMA}. Ese enlace respondió con el código HTTP 200 sin iniciar sesión y muestra el Jenkinsfile, el archivo "
+                   ".travis.yml y la carpeta .github/workflows.")
 else:
     ESTADO_RAMA = ("[[COMPLETAR (Carlos): publicar en GitHub la rama de las entregas 2 y 3 e integrarla en main, porque al 26 de "
                    "noviembre de 2026 la rama main del repositorio solo tiene la primera parte; después, comprobar sin sesión que el "
@@ -1091,8 +1112,9 @@ parrafo("Tres decisiones vienen de lo aprendido con Jenkins. La clave de la base
         "diez veces, cada dos segundos, porque en docker-compose.yml solo la base de datos tiene comprobación de salud y la API puede tardar "
         "unos instantes en aceptar conexiones después de arrancar.")
 titulo("Ejecución en Travis CI", 3)
-parrafo(f"La ejecución en la nube de Travis CI requiere activar la cuenta con créditos por una de las vías de la Tabla {TABLA_TRAVIS} y "
-        f"publicar la rama en GitHub. Mientras tanto, la evidencia de ejecución es la de la Figura {F('t06-travis-local')}: los comandos "
+parrafo(f"La ejecución en la nube de Travis CI requiere activar la cuenta con créditos por una de las vías de la Tabla {TABLA_TRAVIS}"
+        + (" (la rama ya está publicada en GitHub desde el 26 de noviembre de 2026)." if RAMA_PUBLICADA else " y publicar la rama en GitHub.")
+        + f" Mientras tanto, la evidencia de ejecución es la de la Figura {F('t06-travis-local')}: los comandos "
         "de .travis.yml ejecutados en el equipo del proyecto, que se repitieron el 26 de noviembre de 2026 con el mismo resultado. Si el "
         "grupo no consigue los créditos, GitHub Actions ejecuta las mismas etapas en la nube y cumple como herramienta equivalente, según "
         "la indicación del tutor citada al comienzo de esta parte.")
@@ -1172,13 +1194,33 @@ parrafo(f"**timeout-minutes** fija un máximo de 15 minutos por job; sin él, Gi
         "El ejecutor ubuntu-24.04 trae Docker 28.0.4, Docker Compose 2.38.2 y Node.js 22.23.4, según la documentación de su imagen "
         "20261111.370.1 (GitHub, 2026).")
 titulo("Ejecución en GitHub Actions", 3)
-parrafo("GitHub Actions está habilitado en el repositorio, según la consulta a la API de GitHub del 19 de noviembre de 2026, y el "
-        "disparador push aplica a cualquier rama; por eso el flujo se ejecutará solo en cuanto se publique en GitHub la rama de esta entrega. "
-        "El 26 de noviembre de 2026 la API pública de GitHub reportaba cero ejecuciones de Actions en el repositorio, porque la rama todavía "
-        f"no estaba publicada. Hasta entonces, la evidencia de ejecución es la de la Figura {F('t07-actions-local')}, repetida ese mismo día "
-        "con el mismo resultado.")
-parrafo("[[COMPLETAR (Carlos, al publicar la rama): captura de la pestaña Actions del repositorio con los dos jobs en verde y el paso "
-        "Verificar /salud.]]")
+if RAMA_PUBLICADA and EJECUCION_ACTIONS:
+    parrafo("GitHub Actions está habilitado en el repositorio y el disparador push aplica a cualquier rama, así que el flujo se ejecutó solo "
+            "en cuanto se publicó en GitHub la rama de esta entrega. Antes de publicarla, el 26 de noviembre de 2026, la API pública de GitHub "
+            "reportaba cero ejecuciones de Actions en el repositorio. Ese mismo día, al publicar la rama, GitHub ejecutó el flujo sobre el "
+            f"commit 0ad8674 (ejecución {EJECUCION_ACTIONS}): los dos jobs terminaron con éxito en 52 segundos. Las Figuras {F('t09-actions-nube')} "
+            f"y {F('t08-actions-nube-2026-11-26')} lo muestran; la Figura {F('t07-actions-local')} es la misma ejecución hecha antes en el equipo "
+            "del proyecto, con el mismo resultado.", keep=True)
+    figura("t09-actions-nube.png", "Ejecución del flujo de integración continua en GitHub Actions",
+           f"La página pública de la ejecución {EJECUCION_ACTIONS} del flujo integracion-continua.yml, disparada por el push de la rama "
+           "poli-trabajos/ic-entrega3-travis-codeship con el commit 0ad8674. El estado general es Success y la duración total es de 52 "
+           "segundos. El diagrama muestra los dos jobs en verde y en orden: primero Instalar dependencias y pruebas unitarias (14 segundos) "
+           "y después Imagen, dos contenedores, /salud y pruebas de integración (30 segundos), que solo corre porque el primero terminó bien, "
+           "como exige la regla needs del flujo. Cualquier persona puede abrir esta página sin iniciar sesión.", ancho=6.0)
+    figura("t08-actions-nube-2026-11-26.png", "Estado de cada paso de la ejecución en GitHub Actions",
+           "La API de GitHub confirma el resultado paso por paso. En el primer job, las pruebas unitarias dentro de node:22-alpine terminan "
+           "en success. En el segundo, cada paso termina en success en el mismo orden del Jenkinsfile: el archivo .env con una clave de un "
+           "solo uso, la construcción de la imagen, el arranque de los dos contenedores, Verificar /salud, las pruebas de integración y, al "
+           "final, la bajada de los contenedores y el borrado del .env. Es la evidencia de que el flujo funciona en la nube y no solo en el "
+           "equipo del proyecto.", ancho=5.0)
+else:
+    parrafo("GitHub Actions está habilitado en el repositorio, según la consulta a la API de GitHub del 19 de noviembre de 2026, y el "
+            "disparador push aplica a cualquier rama; por eso el flujo se ejecutará solo en cuanto se publique en GitHub la rama de esta entrega. "
+            "El 26 de noviembre de 2026 la API pública de GitHub reportaba cero ejecuciones de Actions en el repositorio, porque la rama todavía "
+            f"no estaba publicada. Hasta entonces, la evidencia de ejecución es la de la Figura {F('t07-actions-local')}, repetida ese mismo día "
+            "con el mismo resultado.")
+    parrafo("[[COMPLETAR (Carlos, al publicar la rama): captura de la pestaña Actions del repositorio con los dos jobs en verde y el paso "
+            "Verificar /salud.]]")
 
 titulo("Validación local de las dos configuraciones", 2)
 parrafo("Antes de conectar los servicios se comprobó en el equipo del proyecto que los dos archivos están bien escritos y que sus comandos "
@@ -1289,7 +1331,8 @@ tabla("Problemas encontrados, causas, soluciones y sugerencias", ["Problema", "C
      f"Revisar los mensajes de la pestaña View Config del primer build ({tr('validacion')})."],
     ["El 26 de noviembre de 2026, el enlace del repositorio solo mostraba la primera parte: main estaba en 190bf46 y GitHub Actions no tenía ejecuciones.",
      "Las ramas de las entregas 2 y 3 se trabajaron en el equipo y no se publicaron en GitHub.",
-     "Pendiente: publicar la rama e integrarla en main.",
+     (f"La rama se publicó en GitHub el 26 de noviembre de 2026 y GitHub Actions la ejecutó con éxito (ejecución {EJECUCION_ACTIONS}); "
+      "queda pendiente integrarla en main." if RAMA_PUBLICADA else "Pendiente: publicar la rama e integrarla en main."),
      "Publicar cada entrega al terminarla y abrir el enlace en una ventana sin sesión antes de entregar, como pidió el tutor."],
     ["Al guardar en un archivo la salida de tools/simular_ci.py, las tildes y las comillas salieron dañadas.",
      "En Windows, cuando la salida va a un archivo, Python escribe con la codificación regional del sistema y no con UTF-8.",
@@ -1336,7 +1379,9 @@ tabla("Guion de la sustentación en video", ["N.º", "Segmento", "Qué se muestr
     ["3", "Contenedores", "docker compose up -d --wait; docker compose ps con tareas-app y tareas-db saludables; curl a /salud y a /tareas.", "1,5"],
     ["4", "Jenkins", "El arranque con jenkins\\levantar.ps1, el tablero en http://localhost:8181, una ejecución de tareas-equipo con las etapas en verde y el historial con la ejecución que falló.", "1,5"],
     ["5", "Travis CI", f"El archivo .travis.yml, el estado de la cuenta (Tabla {TABLA_TRAVIS}) y python tools/simular_ci.py travis con las dos etapas en passed.", "1"],
-    ["6", "Codeship y GitHub Actions", "El aviso de fin de vida de CodeShip, el flujo .github/workflows/integracion-continua.yml y su ejecución en la pestaña Actions del repositorio o, si la rama no está publicada, con python tools/simular_ci.py actions.", "1,5"],
+    ["6", "Codeship y GitHub Actions", "El aviso de fin de vida de CodeShip, el flujo .github/workflows/integracion-continua.yml y "
+     + (f"su ejecución {EJECUCION_ACTIONS} en la pestaña Actions del repositorio, con los dos jobs en verde." if RAMA_PUBLICADA else
+        "su ejecución en la pestaña Actions del repositorio o, si la rama no está publicada, con python tools/simular_ci.py actions."), "1,5"],
     ["7", "Cierre", "Un problema resuelto con su sugerencia y la opinión breve de cada integrante.", "1"],
 ], [0.4, 1.4, 3.9, 0.8])
 parrafo("La suma es de unos ocho minutos y medio, dentro del rango que pidió el tutor. Cada integrante presenta al menos un segmento; el "

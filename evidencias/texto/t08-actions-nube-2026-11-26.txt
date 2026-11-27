@@ -1,0 +1,21 @@
+$ gh run view 45919779652 -R Owito/poli-ic-proyecto1 --json jobs,headSha,event,createdAt,updatedAt
+commit 0ad8674 | evento push | inicio 2026-11-27T00:57:38Z | fin 2026-11-27T00:58:30Z
+
+JOB: Instalar dependencias y pruebas unitarias  ->  success
+   1. Set up job: success
+   2. Descargar código: success
+   3. Pruebas unitarias dentro de node:22-alpine: success
+   6. Post Descargar código: success
+   7. Complete job: success
+
+JOB: Imagen, dos contenedores, /salud y pruebas de integración  ->  success
+   1. Set up job: success
+   2. Descargar código: success
+   3. Archivo .env con una clave de un solo uso: success
+   4. Construir la imagen de la API: success
+   5. Levantar los dos contenedores: success
+   6. Verificar /salud: success
+   7. Pruebas de integración: success
+   8. Bajar los contenedores y borrar el .env: success
+   16. Post Descargar código: success
+   17. Complete job: success

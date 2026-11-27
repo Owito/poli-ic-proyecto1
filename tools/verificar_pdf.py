@@ -30,7 +30,7 @@ def control(nombre, ok, detalle=""):
 
 print("Páginas:", len(paginas))
 
-for tipo, total in (("Figura", 49), ("Tabla", 17), ("Listado", 7)):
+for tipo, total in (("Figura", 51), ("Tabla", 17), ("Listado", 7)):
     rotulos = [int(n) for n in re.findall(rf"(?m)^{tipo} (\d+)\s*$", texto)]
     faltan = sorted(set(range(1, total + 1)) - set(rotulos))
     control(f"{tipo}s rotuladas 1 a {total}", not faltan and len(rotulos) == total, f"rótulos {len(rotulos)}, faltan {faltan}")
@@ -45,7 +45,9 @@ control("Sin guion largo (U+2014)", "\u2014" not in texto)
 control("Sin '??' (referencias rotas)", "??" not in texto)
 control("Sin errores de campo de Word", "Error!" not in texto)
 # C\u00f3digos estudiantiles: el documento lleva solo nombres. Un c\u00f3digo del Poli es un n\u00famero de 9 o 10 cifras.
-codigos = sorted(set(re.findall(r"(?<![\w.,-])\d{8,11}(?![\w.,-])", texto)))
+# Se excluye solo el identificador de la ejecución de GitHub Actions citada en el documento (no es un código estudiantil).
+IDS_PERMITIDOS = {"45919779652"}
+codigos = sorted(set(re.findall(r"(?<![\w.,-])\d{8,11}(?![\w.,-])", texto)) - IDS_PERMITIDOS)
 control("Sin n\u00fameros de 8 a 11 cifras (c\u00f3digos estudiantiles)", not codigos, f"encontrados {codigos}")
 toc = " ".join(paginas[1:5])  # el índice ocupa de la página 2 a la 5
 control("Tabla de contenido con las tres partes y la sustentaci\u00f3n",
